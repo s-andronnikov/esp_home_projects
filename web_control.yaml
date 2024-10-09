@@ -1,0 +1,182 @@
+# https://github.com/ivan-rio/ha_deck_cyd/blob/main/examples/ha_deck_cyd.yaml
+
+esphome:
+  name: luatos-esp32-c3
+  friendly_name: Luatos Esp32 C3
+  platformio_options:
+    # flash_mode defaults to qio, but Air101/LuatOS requires dio mode
+    board_build.f_flash: 40000000L
+    board_build.flash_mode: dio
+    board_build.flash_size: 4MB
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+# api:
+  # port: 4444
+
+web_server:  
+
+ota:
+  - platform: esphome
+    password: ""
+
+wifi:
+  ssid: "NETGEAR29"
+  password: "purpleplum557"
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Luatos Esp32 C3 Fallback Hotspot"
+    password: "1234567890"
+
+captive_portal:
+
+spi:
+  clk_pin: GPIO02
+  mosi_pin: GPIO03
+  # miso_pin: GPIO10
+
+i2c:
+  sda: GPIO04
+  scl: GPIO05
+  scan: false
+  id: bus_i2c
+
+output:
+  - platform: ledc
+    pin: GPIO10
+    id: ha_display_backlight_pwm  
+
+light:
+  - platform: monochromatic
+    output: ha_display_backlight_pwm
+    id: ha_display_light
+    restore_mode: ALWAYS_ON    
+# time:
+#   - platform: homeassistant
+#     id: esptime
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal Sensor"
+    update_interval: 60s
+    id: wifisignal
+  # - platform: homeassistant
+  #   id: kuhnya_temperature
+  #   entity_id: sensor.thb1_4a05_temperature
+  #   internal: true
+
+  # - platform: homeassistant
+  #   id: kuhnya_humidity
+  #   entity_id: sensor.thb1_4a05_humidity
+  #   internal: true
+
+# font:
+#   - file: 'arial.ttf'
+#     id: font3
+#     size: 14
+font:
+  - file: "fonts/arial.ttf"
+    id: my_font1
+    size: 13
+
+display:
+  - platform: st7735
+    id: ha_display
+    # model: TFT_1.8
+    model: "INITR_18BLACKTAB"
+    reset_pin: GPIO11
+    cs_pin: GPIO07
+    dc_pin: GPIO06
+    # led_pin: GPIO10
+    rotation: 90
+    device_width: 128
+    device_height: 160
+    col_start: 0
+    row_start: 0
+    eight_bit_color: false    
+    update_interval: 5s
+    # auto_clear_enabled: false  # lvgl required
+    # update_interval: never  # lvgl required
+    lambda: |-
+      // Draw a line from [0,0] to [100,50]
+      it.line(0, 0, 100, 50);
+      // Draw the outline of a rectangle with the top left at [5,20], a width of 30 and a height of 42
+      it.rectangle(5, 20, 30, 42);
+      // Draw the same rectangle a few pixels apart, but this time filled
+      it.filled_rectangle(40, 40, 30, 42);
+
+      // Circles! Let's draw one with the center at [20,40] and a radius of 10
+      it.circle(20, 40, 10);
+      // ... and the same thing filled again
+      it.filled_circle(20, 75, 10);
+
+      // Triangles... Let's draw the outline of a triangle from the [x,y] coordinates of its three points
+      // [25,5], [100,5], [80,25]
+      it.triangle(25, 5, 100, 5, 80, 25);
+      // and a filled triangle !
+      it.filled_triangle(115, 5, 95, 25, 125, 70);
+
+      // Regular Polygons? Let's draw a filled, pointy-topped hexagon inscribed in a circle
+      // centered on [170,45] with a radius of 20
+      it.filled_regular_polygon(170, 45, 20, EDGES_HEXAGON);
+      // and the outline of flat-topped octagon around it!
+      it.regular_polygon(170, 45, 40, EDGES_OCTAGON, VARIATION_FLAT_TOP);
+      // Need to rotate the polygon, or retrieve the coordinates of its vertices? Check the API!
+
+      // it.printf(0, 0, id(my_font), "Temperature: %.1f°C, Humidity: %.1f%%", id(temperature).state, id(humidity).state);
+      // if (id(kuhnya_temperature).has_state()) {
+      //   it.printf(10, 23, id(my_font1), TextAlign::LEFT , "%.1f°", id(kuhnya_temperature).state);
+      // }
+      // if (id(kuhnya_humidity).has_state()) {
+      //   it.printf(10, 55, id(my_font1), TextAlign::LEFT , "%.1f°", id(kuhnya_humidity).state);
+      // }
+
+
+
+# lvgl:
+#   displays:
+#     - ha_display
+#   pages:
+#     - id: main_page
+#       widgets:
+#         - label:
+#             align: CENTER
+#             text: 'Hello World!'
+
+# sensor:
+#   - platform: homeassistant
+#     id: kuhnya_temperature
+#     entity_id: sensor.thb1_4a05_temperature
+#     attribute: temperature      
+#   - platform: homeassistant
+#     id: kuhnya_humidity
+#     entity_id: sensor.thb1_4a05_humidity
+#     attribute: humidity  
+
+
+# time:
+#   - platform: sntp
+#     id: sntp_time
+#     timezone: Europe/Kyiv
+#     on_time:
+#       - cron: '* * * * * *'
+#         then:
+#           lambda: |-
+#             char buff[10] = "-";
+#             auto time = id(sntp_time).now();
+#             if (time.is_valid())
+#               sprintf(buff, "%02d:%02d:%02d", time.hour, time.minute, time.second);
+#             id(local_time).set_value(std::string(buff));
+
+#           lambda: |-
+#             id(my_lcd_menu).draw();
+#             if (!id(my_lcd_menu).is_active())
+#               it.print("Menu is not active");

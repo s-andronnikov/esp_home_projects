@@ -1,0 +1,7 @@
+hd_value_card -> hd_v_clock
+
+HD_VALUE_CARD -> HD_V_CLOCK
+
+value-card -> v-clock
+
+HdValueCard -> HdVClock

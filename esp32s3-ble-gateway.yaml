@@ -1,0 +1,149 @@
+esphome:
+  name: esp32s3-ble-gateway
+  friendly_name: esp32s3_ble_gateway
+  platformio_options:
+    board_build.flash_mode: dio
+    board_build.flash_size: 16MB
+    build_flags: “-DBOARD_HAS_PSRAM -UARDUINO_USB_CDC_ON_BOOT”
+
+esp32:
+  # board: esp32dev
+  # board: lolin32
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "U8eWLtyyB5ZC9ywz9eQKwSiG9KrjlGtJ4Mk/U3/oaGQ="
+
+ota:
+  - platform: esphome
+    password: "eab0783837ea35b65db8b59db2ed1ac9"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esp32-Ble-Gateway"
+    password: "rO80qF12OVtU"
+
+captive_portal:
+
+# esp32_ble_tracker:
+#   scan_parameters:
+#     interval: 1100ms
+#     window: 1100ms
+#     active: true
+
+# bluetooth_proxy:
+#   active: true
+
+button:
+  - platform: restart
+    name: "Restart"
+
+i2c:
+  sda: GPIO1
+  scl: GPIO2
+  scan: true
+
+display:
+  - platform: ssd1306_i2c
+    model: "SH1106 128x64"
+    # model: "SSD1306 128x64"
+    # address: 0x3C
+    update_interval: 5s
+    lambda: |-
+      it.printf(64, 0, id(font1), TextAlign::TOP_CENTER, "eCO2 Sensor");
+      it.strftime(0, 60, id(font2), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now());
+
+      if (id(sensor_eco2).has_state()) {
+        it.printf(127, 23, id(font3), TextAlign::TOP_RIGHT , "%.f ppm", id(sensor_eco2).state);
+      }
+
+      // Print outside temperature (from homeassistant sensor)
+      if (id(sensor_tvoc).has_state()) {
+        it.printf(127, 60, id(font3), TextAlign::BASELINE_RIGHT , "%.f ppb", id(sensor_tvoc).state);
+      }
+
+font:
+  - file: 'fonts/slkscr.ttf'
+    id: font1
+    size: 8
+
+  - file: 'fonts/BebasNeue-Regular.ttf'
+    id: font2
+    size: 38
+
+  - file: 'fonts/arial.ttf'
+    id: font3
+    size: 14
+
+
+time:
+  - platform: homeassistant
+    timezone: Europe/Kiev
+    id: esptime
+
+sensor:
+  - platform: homeassistant
+    id: sensor_eco2
+    entity_id: sensor.luatos_esp32c3_ens160_eco2
+    internal: true
+
+  - platform: homeassistant
+    id: sensor_tvoc
+    entity_id: sensor.luatos_esp32c3_ens160_tvoc
+    internal: true
+
+    # Uptime sensor
+  - platform: uptime
+    id: sys_uptime
+    type: seconds
+    name: Uptime Sensor    
+    entity_category: "diagnostic"
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
+    device_class: ""
+
+  # Internal Temperature Sensor
+  - platform: internal_temperature
+    id: esp_internal_temperature
+    name: "Internal Temperature"
+    entity_category: "diagnostic"
+
+  # Free memory
+  - platform: template
+    id: esp_memory
+    icon: mdi:memory
+    name: Free Memory
+    lambda: return heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024;
+    unit_of_measurement: 'kB'
+    state_class: measurement
+    entity_category: "diagnostic"
+
+text_sensor:
+    - platform: wifi_info
+      ip_address:
+        name: IP Address
+      mac_address:
+        name: Mac Wifi Address

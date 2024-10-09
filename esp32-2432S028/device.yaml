@@ -1,0 +1,12 @@
+esphome:
+  name: ${devicename}
+  friendly_name: ${friendly}
+  libraries:
+    - SPI
+    - Wire
+    - XPT2046_Touchscreen=https://github.com/PaulStoffregen/XPT2046_Touchscreen.git#v1.4
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino

@@ -1,0 +1,141 @@
+
+substitutions:
+  device_name: esp32-ble-gateway
+  friendly_name: BLE Gateway
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  platformio_options:
+    board_build.f_cpu: 160000000L #160Mhz
+
+esp32:
+  # board: esp32dev
+  board: lolin32
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      # CONFIG_FREERTOS_UNICORE: y
+      CONFIG_ESP32_DEFAULT_CPU_FREQ_160: y
+      CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ: "160"
+      # CONFIG_BT_BLE_50_FEATURES_SUPPORTED: n
+      # CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "U8eWLtyyB5ZC9ywz9eQKwSiG9KrjlGtJ4Mk/U3/oaGQ="
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: Fallback ${device_name}
+    password: !secret esphome_secret
+
+captive_portal:
+
+esp32_ble_tracker:
+  scan_parameters:
+    # interval: 1100ms
+    interval: 15000ms
+    window: 1100ms
+    active: true
+
+bluetooth_proxy:
+  active: true
+
+status_led:
+  pin:
+    number: GPIO22
+    inverted: true
+
+# https://tatham.blog/2021/02/06/esphome-batteries-deep-sleep-and-over-the-air-updates/
+# deep_sleep:
+#   id: deep_sleep_1
+#   run_duration: 15s
+#   sleep_duration: 5min
+
+# binary_sensor:
+#   - platform: homeassistant
+#     entity_id: input_boolean.my_device_disable_sleep
+#     name: Deep Sleep
+#     id: disable_sleep
+#     publish_initial_state: true     # This is important!
+#     entity_category: "diagnostic"
+#     on_state:
+#       then:
+#         if:
+#           condition:
+#             lambda: return x;
+#           then:
+#             - logger.log: "Preventing deep sleep"
+#             - deep_sleep.prevent: deep_sleep_1
+#           else:
+#             - logger.log: "Allowing deep sleep"
+#             - deep_sleep.allow: deep_sleep_1
+
+ota:
+  - platform: esphome
+    password: !secret esphome_secret
+    # on_end:
+    #   then:
+    #     - homeassistant.service:
+    #         service: input_boolean.turn_off
+    #         data:
+    #           entity_id:
+    #             input_boolean.my_device_disable_sleep
+
+button:
+  - platform: restart
+    name: "Restart"
+
+sensor:
+    # Uptime sensor
+  - platform: uptime
+    id: sys_uptime
+    type: seconds
+    name: Uptime Sensor    
+    entity_category: "diagnostic"
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
+    device_class: ""
+
+  # Internal Temperature Sensor
+  - platform: internal_temperature
+    id: esp_internal_temperature
+    name: "Internal Temperature"
+    entity_category: "diagnostic"
+
+  # Free memory
+  - platform: template
+    id: esp_memory
+    icon: mdi:memory
+    name: Free Memory
+    lambda: return heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024;
+    unit_of_measurement: 'kB'
+    state_class: measurement
+    entity_category: "diagnostic"
+
+text_sensor:
+    - platform: wifi_info
+      ip_address:
+        name: IP Address
+      mac_address:
+        name: Mac Wifi Address
