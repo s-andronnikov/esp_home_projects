@@ -2,8 +2,7 @@
 substitutions:
   device_name:     esp32c3_supermini
   friendly_name:   ESP32C3 Super Mini
-  global_update_interval: 10min
-  # global_update_interval: 5s
+  global_update_interval: 60s
 
 esphome:
   name: ${device_name}
@@ -12,6 +11,17 @@ esphome:
     board_build.f_flash: 40000000L
     board_build.flash_mode: dio
     board_build.flash_size: 4MB
+  on_boot:
+    priority: -100.0
+    then:
+      - component.update: battery_voltage
+      - component.update: battery_level
+      - component.update: sys_uptime
+      - component.update: wifi_signal_db
+      - component.update: esp_internal_temperature
+      - component.update: esp_memory
+      - delay: !lambda "return id(run_duration_number).state * 1000;"
+      - script.execute: trigger_deep_sleep
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -22,7 +32,6 @@ esp32:
     platform_version: 6.9.0 # https://github.com/platformio/platform-espressif32/releases/
     sdkconfig_options:
       CONFIG_ESPTOOLPY_FLASHSIZE_4MB: y
-
 
 # Enable Home Assistant API
 api:
@@ -43,7 +52,6 @@ ota:
   - platform: esphome
     password: !secret esphome_ota_password
 
-
 # Enable logging
 # logger:
 
@@ -51,34 +59,6 @@ captive_portal:
 
 # web_server:
 #  port: 80
-
-# esp32_ble_tracker:
-#   scan_parameters:
-#     interval: 1100ms
-#     window: 1100ms
-#     active: true
-
-# bluetooth_proxy:
-#   active: true
-
-# output:
-#   - platform: gpio
-#     id: power_led
-#     pin: 
-#       number: GPIO12
-#       ignore_pin_validation_error: true
-#       # inverted: True
-#       mode: OUTPUT     
-
-#light:
-#  - platform: status_led
-#    name: "Status LED"
-#    id: esp_status_led
-#    icon: "mdi:alarm-light"
-#    pin:
-#      number: GPIO8
-#      inverted: true
-#    restore_mode: ALWAYS_OFF
 
 status_led:
   pin:
@@ -89,29 +69,82 @@ button:
   - platform: restart
     name: "Restart"
 
-# deep_sleep:
-#   run_duration: 10s  # How long the device stays awake to take measurements
-#   sleep_duration: 60s  # Deep sleep for 60 seconds
+number:
+  - platform: template
+    name: "DS Duration (min)"
+    id: sleep_duration_number
+    unit_of_measurement: "min"
+    min_value: 1
+    max_value: 60
+    step: 1
+    optimistic: true
+    restore_value: true
+    initial_value: 15
 
+  - platform: template
+    name: "Run Duration (sec)"
+    id: run_duration_number
+    unit_of_measurement: "s"
+    min_value: 5
+    max_value: 60
+    step: 5
+    optimistic: true
+    restore_value: true
+    initial_value: 15  # Default run duration is 5 seconds
+
+switch:
+  - platform: template
+    name: "Deep Sleep Enable"
+    id: deep_sleep_enable
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON  # Changed to restore_mode for compatibility with ESPHome 2024.10
+    on_turn_on:
+      - delay: !lambda "return id(run_duration_number).state * 1000;"
+      - script.execute: trigger_deep_sleep
+    on_turn_off:
+      - lambda: |-
+          ESP_LOGD("deep_sleep", "Deep sleep disabled, remaining awake.");
+
+
+deep_sleep:
+  id: deep_sleep_control
+  run_duration: 30s # default running duration
+  sleep_duration: 10min  # Default duration for deep sleep
+
+
+script:
+  - id: trigger_deep_sleep
+    mode: queued
+    then:
+      - if:
+          condition:
+            switch.is_on: deep_sleep_enable
+          then:
+            - lambda: |-
+                ESP_LOGD("deep_sleep", "All sensors have submitted values, going to deep sleep now.");
+            - deep_sleep.enter:
+                id: deep_sleep_control
+                sleep_duration: !lambda "return id(sleep_duration_number).state * 60 * 1000;"                  
+          else:
+            - lambda: |-
+                ESP_LOGD("deep_sleep", "Deep sleep is disabled, skipping.");
 
 sensor:
   - platform: adc
     id: battery_voltage
     pin: GPIO1
     name: "Battery Voltage"
-    icon: mdi:battery_voltage
-    update_interval: ${global_update_interval}
-    attenuation: 11db
     entity_category: "diagnostic"
+    attenuation: 11db
     filters:
-      # Use the new multiplier based on the measured values
       - multiply: 1.7341
+    update_interval: ${global_update_interval}
 
   - platform: template
     name: "Battery Level"
-    id: battery
+    id: battery_level
     unit_of_measurement: "%"
-    icon: mdi:battery
+    device_class: battery
     entity_category: "diagnostic"
     lambda: |-
       if (id(battery_voltage).state > 4.2) {
@@ -128,24 +161,22 @@ sensor:
     id: sys_uptime
     type: seconds
     name: Uptime Sensor
-    update_interval: ${global_update_interval}
     entity_category: "diagnostic"
+    update_interval: ${global_update_interval}
 
-# Example configuration entry with 2 sensors and filter
-  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+  # WiFi signal sensors
+  - platform: wifi_signal
     name: "WiFi Signal dB"
     id: wifi_signal_db
-    update_interval: ${global_update_interval}
     entity_category: "diagnostic"
 
-  - platform: copy # Reports the WiFi signal strength in %
+  - platform: copy
     source_id: wifi_signal_db
     name: "WiFi Signal Percent"
     filters:
       - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
     unit_of_measurement: "%"
     entity_category: "diagnostic"
-    device_class: ""
 
   # Internal Temperature Sensor
   - platform: internal_temperature
@@ -164,11 +195,3 @@ sensor:
     state_class: measurement
     entity_category: "diagnostic"
     update_interval: ${global_update_interval}
-
-# text_sensor:
-#     - platform: wifi_info
-#       ip_address:
-#         name: IP Address
-#       mac_address:
-#         name: Mac Wifi Address
-      

@@ -200,7 +200,13 @@ ha_deck:
   on_inactivity_change:
     lambda:  |-
       if (x) {
-        id(device).set_brightness(id(inactive_screen_brightness).state);
+        auto ctime = id(sntp_time).now();
+        ESP_LOGI("time", "Current hour: %d", ctime.hour);  // Log the current hour
+        if (ctime.hour >= 1 && ctime.hour <= 8) {
+          id(device).set_brightness(0);
+        } else {
+          id(device).set_brightness(id(inactive_screen_brightness).state);
+        }
       } else {
         id(device).set_brightness(id(screen_brightness).state);
       }
