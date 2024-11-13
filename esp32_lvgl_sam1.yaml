@@ -55,6 +55,25 @@ time:
     #           id(vc_local_time).set_value(time);    
     #         }
 
+
+script:
+  - id: check_brightness
+    mode: queued
+    then:
+      - lambda: |-
+          auto ctime = id(sntp_time).now();
+          if (ctime.is_valid()) {
+            ESP_LOGI("time", "Current hour: %d", ctime.hour);
+            if (ctime.hour >= 0 && ctime.hour <= 8) {
+              ESP_LOGI("time", "Set brightness to zero");
+              id(device).set_brightness(0);              
+            } else {
+              ESP_LOGI("time", "Set brightness [inactive]: %d", id(inactive_screen_brightness).state);
+              id(device).set_brightness(id(inactive_screen_brightness).state);
+            }
+          }
+
+
 interval:
   - interval: 15sec
     then:
@@ -62,6 +81,9 @@ interval:
         auto time = id(sntp_time).now();
         if (time.is_valid()) {
           id(vc_local_time).set_value(time);    
+          if (time.minute == 5) {  // Trigger every hour at 5 minutes past
+            id(check_brightness).execute();
+          }
         }
 
 
@@ -191,6 +213,7 @@ sensor:
     state_class: measurement
     entity_category: "diagnostic"    
 
+
 ha_deck:
   id: deck
   main_screen: ${SCREEN_MAIN}
@@ -200,13 +223,7 @@ ha_deck:
   on_inactivity_change:
     lambda:  |-
       if (x) {
-        auto ctime = id(sntp_time).now();
-        ESP_LOGI("time", "Current hour: %d", ctime.hour);  // Log the current hour
-        if (ctime.hour >= 1 && ctime.hour <= 8) {
-          id(device).set_brightness(0);
-        } else {
-          id(device).set_brightness(id(inactive_screen_brightness).state);
-        }
+        id(check_brightness).execute();
       } else {
         id(device).set_brightness(id(screen_brightness).state);
       }
