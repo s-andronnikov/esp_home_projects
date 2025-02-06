@@ -11,6 +11,7 @@ substitutions:
   SENSOR_ROOM1_AIR_QUALITY_INDEX: sensor.luatos_esp32c3_ens160_air_quality_index
   SENSOR_ROOM1_ECO2: sensor.luatos_esp32c3_ens160_eco2
   SENSOR_ROOM1_TVOC: sensor.luatos_esp32c3_ens160_tvoc
+  SENSOR_HOME_WEATHER: weather.forecast_home
   
   SENSOR_OUT_TEMPERATURE: sensor.street_kyrpychova_2_temperature
   SENSOR_OUT_HUMIDITY: sensor.street_kyrpychova_2_humidity
@@ -117,6 +118,28 @@ output:
   - platform: ledc
     pin: 10
     id: out_10
+  - platform: ledc
+    id: output_red
+    pin: GPIO4
+    inverted: true
+  - platform: ledc
+    id: output_green
+    pin: GPIO16
+    inverted: true
+  - platform: ledc
+    id: output_blue
+    pin: GPIO17
+    inverted: true  
+
+light:
+  - platform: rgb
+    name: LED
+    red: output_red
+    id: led
+    green: output_green
+    blue: output_blue
+    restore_mode: ALWAYS_OFF
+
 
 hd_device_cyd:
   id: device
@@ -126,13 +149,15 @@ sensor:
   # IN data
   - platform: homeassistant
     id: room1_temperature
-    entity_id: ${SENSOR_ROOM1_TEMPERATURE}
+    entity_id: ${SENSOR_HOME_WEATHER}
+    attribute: temperature
     unit_of_measurement: "°C"
     internal: true
 
   - platform: homeassistant
     id: room1_humidity
-    entity_id: ${SENSOR_ROOM1_HUMIDITY}
+    entity_id: ${SENSOR_HOME_WEATHER}
+    attribute: humidity
     unit_of_measurement: "%"
     internal: true
     
@@ -213,6 +238,17 @@ sensor:
     state_class: measurement
     entity_category: "diagnostic"    
 
+  #  Light sensor
+  - platform: adc
+    pin: 34
+    name: "Light Sensor"
+    update_interval: 60s
+    unit_of_measurement: lx
+    attenuation: 11db
+    filters:
+      - lambda: |-
+          return (x / 10000.0) * 2000000.0;
+
 
 ha_deck:
   id: deck
@@ -239,7 +275,7 @@ ha_deck:
         - type: value-card
           id: vc_temperature
           position: 217, 5
-          dimensions: 101x75
+          dimensions: 101x73
           # text: °C
           # icon: 󰔏
           enabled: return true;
