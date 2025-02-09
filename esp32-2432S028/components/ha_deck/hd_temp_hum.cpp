@@ -83,8 +83,8 @@ void HdTempHum::render_() {
     lv_obj_clear_flag(lv_main_, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_pad_top(lv_main_, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(lv_main_, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(lv_main_, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(lv_main_, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_pad_left(lv_main_, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_pad_right(lv_main_, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     int32_t top_pos_y = 0;
 
@@ -136,7 +136,7 @@ void HdTempHum::render_() {
     lv_obj_align(lv_battery_, LV_ALIGN_BOTTOM_RIGHT, -5, 0);
     // lv_obj_set_pos(lv_battery_, lv_pct(50), 2);
     // lv_obj_set_size(lv_battery_, lv_pct(50), 26);
-    lv_obj_set_style_text_font(lv_battery_, &Material24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_text_font(lv_battery_, &Material24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(lv_battery_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_right(lv_battery_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(lv_battery_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
