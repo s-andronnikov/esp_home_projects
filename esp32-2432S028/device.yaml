@@ -1,6 +1,8 @@
 esphome:
   name: ${devicename}
   friendly_name: ${friendly}
+  includes:
+    - esp32-2432S028/components/hd_device_cyd/lv_conf.h
   libraries:
     - SPI
     - Wire

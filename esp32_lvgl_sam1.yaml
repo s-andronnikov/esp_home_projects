@@ -293,7 +293,6 @@ ha_deck:
           temperature: !lambda return str_sprintf("%0.1f°C", id(out_temperature).state);
           humidity: !lambda return str_sprintf("%.0f%%", id(out_humidity).state);
           battery_level: !lambda return int(id(out_battery).state);
-          # value: !lambda return str_sprintf("%0.1f°C\n%.0f%%", id(out_temperature).state, id(out_humidity).state);
         
         - type: value-card
           id: vc_air_quality_index

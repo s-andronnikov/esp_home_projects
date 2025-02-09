@@ -33,8 +33,8 @@ private:
 
     const char *TAG = "HD_TEMP_HUM";
     std::string title_;
-    std::string temperature_ = "";
-    std::string humidity_ = "";
+    std::string temperature_ = "--";
+    std::string humidity_ = "--";
     int battery_level_ = 0;
 
     lv_obj_t *lv_main_ = nullptr;
