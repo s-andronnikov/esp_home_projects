@@ -8,6 +8,7 @@
 #include "lvgl.h"
 
 LV_FONT_DECLARE(Font16);
+LV_FONT_DECLARE(Font10);
 LV_FONT_DECLARE(Font24);
 LV_FONT_DECLARE(Material24);
 LV_FONT_DECLARE(Material48);

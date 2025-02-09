@@ -6,15 +6,19 @@ substitutions:
   friendly:   esp32_lvgl_sam1
   SCREEN_MAIN: master
 
-  SENSOR_ROOM1_TEMPERATURE: sensor.th05_2d7f_temperature
-  SENSOR_ROOM1_HUMIDITY: sensor.th05_2d7f_humidity
+  # SENSOR_ROOM1_TEMPERATURE: sensor.th05_2d7f_temperature
+  # SENSOR_ROOM1_HUMIDITY: sensor.th05_2d7f_humidity
+
   SENSOR_ROOM1_AIR_QUALITY_INDEX: sensor.luatos_esp32c3_ens160_air_quality_index
   SENSOR_ROOM1_ECO2: sensor.luatos_esp32c3_ens160_eco2
   SENSOR_ROOM1_TVOC: sensor.luatos_esp32c3_ens160_tvoc
+
   SENSOR_HOME_WEATHER: weather.forecast_home
   
-  SENSOR_OUT_TEMPERATURE: sensor.street_kyrpychova_2_temperature
-  SENSOR_OUT_HUMIDITY: sensor.street_kyrpychova_2_humidity
+  SENSOR_OUT_TEMPERATURE: sensor.bth01_ed84_temperature
+  SENSOR_OUT_HUMIDITY: sensor.bth01_ed84_humidity
+  SENSOR_OUT_BATTERY: sensor.bth01_ed84_battery
+
   SENSOR_OUT_AIR_QUALITY_INDEX: sensor.street_kyrpychova_2_pm2_5
   SENSOR_OUT_PM10: sensor.street_kyrpychova_2_pm10
 
@@ -148,14 +152,14 @@ hd_device_cyd:
 sensor:
   # IN data
   - platform: homeassistant
-    id: room1_temperature
+    id: weather_temperature
     entity_id: ${SENSOR_HOME_WEATHER}
     attribute: temperature
     unit_of_measurement: "°C"
     internal: true
 
   - platform: homeassistant
-    id: room1_humidity
+    id: weather_humidity
     entity_id: ${SENSOR_HOME_WEATHER}
     attribute: humidity
     unit_of_measurement: "%"
@@ -186,6 +190,12 @@ sensor:
   - platform: homeassistant
     id: out_humidity
     entity_id: ${SENSOR_OUT_HUMIDITY}
+    unit_of_measurement: "%"    
+    internal: true
+
+  - platform: homeassistant
+    id: out_battery
+    entity_id: ${SENSOR_OUT_BATTERY}
     unit_of_measurement: "%"    
     internal: true
 
@@ -244,7 +254,7 @@ sensor:
     name: "Light Sensor"
     update_interval: 60s
     unit_of_measurement: lx
-    attenuation: 11db
+    attenuation: 12db
     filters:
       - lambda: |-
           return (x / 10000.0) * 2000000.0;
@@ -272,14 +282,18 @@ ha_deck:
           dimensions: 207x73
           enabled: return true;
 
-        - type: value-card
+        - type: temp-hum-card
           id: vc_temperature
           position: 217, 5
           dimensions: 101x73
+          title: "balcon"
           # text: °C
           # icon: 󰔏
           enabled: return true;
-          value: !lambda return str_sprintf("%0.1f°C\n%.0f%%", id(room1_temperature).state, id(room1_humidity).state);
+          temperature: !lambda return str_sprintf("%0.1f°C", id(out_temperature).state);
+          humidity: !lambda return str_sprintf("%.0f%%", id(out_humidity).state);
+          battery_level: !lambda return int(id(out_battery).state);
+          # value: !lambda return str_sprintf("%0.1f°C\n%.0f%%", id(out_temperature).state, id(out_humidity).state);
         
         - type: value-card
           id: vc_air_quality_index
@@ -330,4 +344,4 @@ ha_deck:
           position: 217, 161
           dimensions: 101x73
           enabled: return true;
-          value: !lambda return str_sprintf("%0.1f°C\n%.0f%%", id(out_temperature).state, id(out_humidity).state);  
+          value: !lambda return str_sprintf("%0.1f°C\n%.0f%%", id(weather_temperature).state, id(weather_humidity).state);  

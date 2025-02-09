@@ -22,6 +22,7 @@ from .hd_button import BUTTON_CONFIG_SCHEMA, build_button
 from .hd_slider import SLIDER_CONFIG_SCHEMA, build_slider
 from .hd_value_card import VALUE_CARD_CONFIG_SCHEMA, build_value_card
 from .hd_v_clock import V_CLOCK_CONFIG_SCHEMA, build_v_clock
+from .hd_temp_hum import TEMP_HUM_CONFIG_SCHEMA, build_temp_hum
 
 CODEOWNERS = ["@strange-v"]
 
@@ -40,6 +41,7 @@ CONF_BUTTON = "button"
 CONF_SLIDER = "slider"
 CONF_VALUE_CARD = "value-card"
 CONF_V_CLOCK = "v-clock"
+CONF_TEMP_HUM_CARD = "temp-hum-card"
 
 InactivityChangeTrigger = ha_deck_ns.class_(
     "HaDeckInactivityChangeTrigger", automation.Trigger.template(cg.bool_)
@@ -60,6 +62,7 @@ WIDGET_BUILDERS = {
     CONF_SLIDER: build_slider,
     CONF_VALUE_CARD: build_value_card,
     CONF_V_CLOCK: build_v_clock,
+    CONF_TEMP_HUM_CARD: build_temp_hum,
 }
 
 COMMON_WIDGET_SCHEMA = cv.Schema(
@@ -75,6 +78,7 @@ WIDGET_SCHEMA = cv.typed_schema({
     CONF_SLIDER: COMMON_WIDGET_SCHEMA.extend(SLIDER_CONFIG_SCHEMA),
     CONF_VALUE_CARD: COMMON_WIDGET_SCHEMA.extend(VALUE_CARD_CONFIG_SCHEMA),
     CONF_V_CLOCK: COMMON_WIDGET_SCHEMA.extend(V_CLOCK_CONFIG_SCHEMA),
+    CONF_TEMP_HUM_CARD: COMMON_WIDGET_SCHEMA.extend(TEMP_HUM_CONFIG_SCHEMA),
 })
 SCREEN_SCHEMA = cv.Schema(
     {
