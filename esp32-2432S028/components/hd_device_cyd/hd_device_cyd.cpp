@@ -55,7 +55,7 @@ void HaDeckDevice::setup() {
 
     mySpi.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
     ts.begin(mySpi);
-    ts.setRotation(3);
+    ts.setRotation(1);
 
     lcd.init();
 
@@ -82,7 +82,7 @@ void HaDeckDevice::setup() {
     group = lv_group_create();
     lv_group_set_default(group);
     lcd.setBrightness(brightness_);
-    lcd.setRotation(2);
+    lcd.setRotation(0);
 }
 
 void HaDeckDevice::loop() {

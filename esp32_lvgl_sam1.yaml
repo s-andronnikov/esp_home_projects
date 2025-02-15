@@ -249,15 +249,15 @@ sensor:
     entity_category: "diagnostic"    
 
   #  Light sensor
-  - platform: adc
-    pin: 34
-    name: "Light Sensor"
-    update_interval: 60s
-    unit_of_measurement: lx
-    attenuation: 12db
-    filters:
-      - lambda: |-
-          return (x / 10000.0) * 2000000.0;
+  # - platform: adc
+  #   pin: 34
+  #   name: "Light Sensor"
+  #   update_interval: 60s
+  #   unit_of_measurement: lx
+  #   attenuation: 12db
+  #   filters:
+  #     - lambda: |-
+  #         return (x / 10000.0) * 2000000.0;
 
 
 ha_deck:
