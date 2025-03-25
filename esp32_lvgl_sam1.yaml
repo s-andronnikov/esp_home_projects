@@ -9,9 +9,9 @@ substitutions:
   # SENSOR_ROOM1_TEMPERATURE: sensor.th05_2d7f_temperature
   # SENSOR_ROOM1_HUMIDITY: sensor.th05_2d7f_humidity
 
-  SENSOR_ROOM1_AIR_QUALITY_INDEX: sensor.luatos_esp32c3_ens160_air_quality_index
-  SENSOR_ROOM1_ECO2: sensor.luatos_esp32c3_ens160_eco2
-  SENSOR_ROOM1_TVOC: sensor.luatos_esp32c3_ens160_tvoc
+  SENSOR_ROOM1_AIR_QUALITY_INDEX: sensor.air_detector_pm2_5
+  SENSOR_ROOM1_ECO2: sensor.air_detector_carbon_dioxide
+  SENSOR_ROOM1_TVOC: sensor.air_detector_vocs
 
   SENSOR_HOME_WEATHER: weather.forecast_home
   
