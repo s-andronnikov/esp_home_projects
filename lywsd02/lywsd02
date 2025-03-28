@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+# see: https://github.com/h4/lywsd02/
+
+import argparse
+from datetime import datetime, timezone
+import lywsd02
+
+parser = argparse.ArgumentParser()
+parser.add_argument('action', help='Action to perform, either: sync - synchronize time with this machine, read - read current values from device, setc/setf - set temperature unit on display to Celsius/Fahrenheit', choices=['sync', 'read', 'setc', 'setf'])
+parser.add_argument('mac', help='MAC address of LYWSD02 device', nargs='+')
+args = parser.parse_args()
+
+for mac in args.mac:
+    try:
+	client = lywsd02.Lywsd02Client(mac)
+	if args.action == 'sync':
+	    local_dt = datetime.now().astimezone()
+	    offset_hours = int(local_dt.utcoffset().total_seconds() // 3600)
+	    current_date = datetime.now()
+	    print(f'Synchronizing time of [{mac}] - T:{current_date.isoformat()} TZ:{offset_hours}')
+	    client.tz_offset = offset_hours
+	    client.time = current_date
+	    #(cl_time, tz) = client.time
+	    #print(f"Time Set: {cl_time.isoformat()} - {tz}")
+	elif args.action == 'read':
+	    print('Fetching data from {}'.format(mac))
+	    data = client.data
+	    print('Temperature: {}°C'.format(data.temperature))
+	    print('Humidity: {}%'.format(data.humidity))
+	    print('Battery: {}%'.format(client.battery))
+	    print()
+	elif args.action == 'setc':
+	    client.units = 'C'
+	elif args.action == 'setf':
+	    client.units = 'F'
+    except Exception as e:
+	print(e)
