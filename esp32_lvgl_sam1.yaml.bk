@@ -3,342 +3,276 @@
 
 substitutions:
   devicename: esp32-lvgl-sam1
-  friendly: esp32_lvgl_sam1
+  friendly:   esp32_lvgl_sam1
   SCREEN_MAIN: master
+
+  # SENSOR_ROOM1_TEMPERATURE: sensor.th05_2d7f_temperature
+  # SENSOR_ROOM1_HUMIDITY: sensor.th05_2d7f_humidity
+
   SENSOR_ROOM1_AIR_QUALITY_INDEX: sensor.air_detector_pm2_5
   SENSOR_ROOM1_ECO2: sensor.air_detector_carbon_dioxide
   SENSOR_ROOM1_TVOC: sensor.air_detector_vocs
+
   SENSOR_HOME_WEATHER: weather.forecast_home
+  
   SENSOR_OUT_TEMPERATURE: sensor.bth01_ed84_temperature
   SENSOR_OUT_HUMIDITY: sensor.bth01_ed84_humidity
   SENSOR_OUT_BATTERY: sensor.bth01_ed84_battery
+
   SENSOR_OUT_AIR_QUALITY_INDEX: sensor.street_kyrpychova_2_pm2_5
   SENSOR_OUT_PM10: sensor.street_kyrpychova_2_pm10
 
-# ESPHome version - explicitly specify for stability
-esphome:
-  name: ${devicename}
-  friendly_name: ${friendly}
 
 packages:
-  device: !include ./esp32-2432S028/device.yaml
+  device: !include ./esp32-2432S028/device.yaml # include our test device setup
 
-# Logger with reduced verbosity for production
 logger:
-  level: INFO
-  logs:
-    sensor: WARN
-    ledc.output: WARN
 
-# API with modern encryption
 api:
   encryption:
     key: !secret api_encryption_key
-  reboot_timeout: 15min
 
-# Modern OTA configuration
 ota:
   - platform: esphome
     password: !secret esphome_ota_password
-    # safe_mode: true
-    # reboot_timeout: 10min
-    # num_attempts: 5
 
-# WiFi with improved reliability
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  fast_connect: true
-  reboot_timeout: 15min
-  power_save_mode: LIGHT
-  
-  # Fallback AP mode
-  # ap:
-  #   ssid: "${devicename} Fallback"
-  #   password: !secret wifi_fallback_password
 
-# Captive portal for easy WiFi setup
-captive_portal:
-
-# External components
 external_components:
   - source: ./esp32-2432S028/components
-    components: [hd_device_cyd, ha_deck]
+    components: [ hd_device_cyd, ha_deck]
 
-# Time with improved sync
+# web_server:
+#   port: 80
 time:
+  # - platform: sntp 
   - platform: homeassistant
     id: sntp_time
     timezone: Europe/Kyiv
-    on_time_sync:
-      then:
-        - logger.log: "Time synchronized with Home Assistant"
+    # on_time:
+    #   - cron: '* * * * * *'
+    #     then:
+    #       lambda: |-
+    #         auto time = id(sntp_time).now();
+    #         if (time.is_valid()) {
+    #           id(vc_local_time).set_value(time);    
+    #         }
 
-# Optimized scripts
+
 script:
   - id: check_brightness
-    mode: restart  # Changed from queued to restart for better behavior
+    mode: queued
     then:
       - lambda: |-
           auto ctime = id(sntp_time).now();
           if (ctime.is_valid()) {
-            ESP_LOGI("brightness", "Current hour: %d", ctime.hour);
+            ESP_LOGI("time", "Current hour: %d", ctime.hour);
             if (ctime.hour >= 0 && ctime.hour <= 8) {
-              ESP_LOGI("brightness", "Night mode: brightness set to 0");
-              id(device).set_brightness(0);
+              ESP_LOGI("time", "Set brightness to zero");
+              id(device).set_brightness(0);              
             } else {
-              float brightness = id(inactive_screen_brightness).state;
-              ESP_LOGI("brightness", "Day mode: brightness set to %.0f", brightness);
-              id(device).set_brightness(brightness);
+              ESP_LOGI("time", "Set brightness [inactive]: %d", id(inactive_screen_brightness).state);
+              id(device).set_brightness(id(inactive_screen_brightness).state);
             }
           }
 
-# Improved interval with time update
+
 interval:
-  - interval: 1min  # Changed to 1min for more frequent checks
+  - interval: 15sec
     then:
-      - lambda: |-
-          auto time = id(sntp_time).now();
-          if (time.is_valid()) {
-            id(vc_local_time).set_value(time);
-            // Check brightness every hour
-            if (time.minute == 0) {
-              id(check_brightness).execute();
-            }
+      lambda: |-
+        auto time = id(sntp_time).now();
+        if (time.is_valid()) {
+          id(vc_local_time).set_value(time);    
+          if (time.minute == 5) {  // Trigger every hour at 5 minutes past
+            id(check_brightness).execute();
           }
+        }
 
-# Brightness controls with validation
+
 number:
   - platform: template
     id: screen_brightness
-    name: "Active Screen Brightness"
-    icon: mdi:brightness-6
+    name: Active screen brightness
     min_value: 0
     max_value: 100
     step: 5
     initial_value: 75
     restore_value: true
-    mode: slider
-    optimistic: true
-    unit_of_measurement: "%"
-    entity_category: config
     set_action:
       - lambda: |-
-          if (!id(deck).get_inactivity()) {
+          if (!id(deck).get_inactivity())
             id(device).set_brightness(x);
-          }
-
   - platform: template
     id: inactive_screen_brightness
-    name: "Inactive Screen Brightness"
-    icon: mdi:brightness-5
+    name: Inactive screen brightness
     min_value: 0
     max_value: 100
     step: 5
     initial_value: 30
     restore_value: true
-    mode: slider
-    optimistic: true
-    unit_of_measurement: "%"
-    entity_category: config
     set_action:
       - lambda: |-
-          if (id(deck).get_inactivity()) {
+          if (id(deck).get_inactivity())
             id(device).set_brightness(x);
-          }
 
-# Outputs with proper configuration
 output:
   - platform: ledc
-    pin: GPIO10
+    pin: 10
     id: out_10
-    frequency: 1000Hz
-    
   - platform: ledc
     id: output_red
     pin: GPIO4
     inverted: true
-    frequency: 1000Hz
-    
   - platform: ledc
     id: output_green
     pin: GPIO16
     inverted: true
-    frequency: 1000Hz
-    
   - platform: ledc
     id: output_blue
     pin: GPIO17
-    inverted: true
-    frequency: 1000Hz
+    inverted: true  
 
-# RGB LED with proper restore mode
 light:
   - platform: rgb
-    name: "Status LED"
-    id: led
+    name: LED
     red: output_red
+    id: led
     green: output_green
     blue: output_blue
     restore_mode: ALWAYS_OFF
-    effects:
-      - pulse:
-          name: "Pulse"
-          transition_length: 1s
-          update_interval: 1s
 
-# Device configuration
+
 hd_device_cyd:
   id: device
   brightness: 75
 
-# Sensors with improved configuration
 sensor:
-  # Weather data
+  # IN data
   - platform: homeassistant
     id: weather_temperature
     entity_id: ${SENSOR_HOME_WEATHER}
     attribute: temperature
     unit_of_measurement: "°C"
-    accuracy_decimals: 1
     internal: true
-    
+
   - platform: homeassistant
     id: weather_humidity
     entity_id: ${SENSOR_HOME_WEATHER}
     attribute: humidity
     unit_of_measurement: "%"
-    accuracy_decimals: 0
     internal: true
     
-  # Indoor air quality
   - platform: homeassistant
     id: room1_air_quality_index
     entity_id: ${SENSOR_ROOM1_AIR_QUALITY_INDEX}
-    accuracy_decimals: 0
     internal: true
-    
+
   - platform: homeassistant
     id: room1_air_eco2
     entity_id: ${SENSOR_ROOM1_ECO2}
-    accuracy_decimals: 0
     internal: true
-    
+
   - platform: homeassistant
     id: room1_air_tvoc
     entity_id: ${SENSOR_ROOM1_TVOC}
-    accuracy_decimals: 0
     internal: true
-    
-  # Outdoor data
+
+  # OUT data
   - platform: homeassistant
     id: out_temperature
     entity_id: ${SENSOR_OUT_TEMPERATURE}
     unit_of_measurement: "°C"
-    accuracy_decimals: 1
     internal: true
-    
+
   - platform: homeassistant
     id: out_humidity
     entity_id: ${SENSOR_OUT_HUMIDITY}
-    unit_of_measurement: "%"
-    accuracy_decimals: 0
+    unit_of_measurement: "%"    
     internal: true
-    
+
   - platform: homeassistant
     id: out_battery
     entity_id: ${SENSOR_OUT_BATTERY}
-    unit_of_measurement: "%"
-    accuracy_decimals: 0
+    unit_of_measurement: "%"    
     internal: true
-    
+
   - platform: homeassistant
     id: out_air_quality_index
     entity_id: ${SENSOR_OUT_AIR_QUALITY_INDEX}
-    accuracy_decimals: 0
     internal: true
-    
+
   - platform: homeassistant
     id: out_air_pm10
     entity_id: ${SENSOR_OUT_PM10}
-    accuracy_decimals: 0
     internal: true
-    
-  # System sensors
+
+  # Uptime sensor
   - platform: uptime
     id: sys_uptime
-    name: "Uptime"
-    entity_category: diagnostic
-    update_interval: 60s
-    
-  - platform: wifi_signal
-    name: "WiFi Signal"
+    type: seconds
+    name: Uptime Sensor    
+    entity_category: "diagnostic"
+
+# Example configuration entry with 2 sensors and filter
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
     id: wifi_signal_db
     update_interval: 60s
-    entity_category: diagnostic
-    
-  - platform: copy
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
     source_id: wifi_signal_db
-    name: "WiFi Signal Strength"
+    name: "WiFi Signal Percent"
     filters:
       - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
     unit_of_measurement: "%"
-    entity_category: diagnostic
+    entity_category: "diagnostic"
     device_class: ""
-    accuracy_decimals: 0
-    
+
+  # Internal Temperature Sensor
   - platform: internal_temperature
     id: esp_internal_temperature
     name: "Internal Temperature"
-    entity_category: diagnostic
-    update_interval: 60s
-    
+    entity_category: "diagnostic"
+
+  # Free memory
   - platform: template
     id: esp_memory
-    name: "Free Memory"
     icon: mdi:memory
+    name: Free Memory
     lambda: return heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024;
     unit_of_measurement: 'kB'
     state_class: measurement
-    entity_category: diagnostic
-    update_interval: 60s
-    accuracy_decimals: 0
+    entity_category: "diagnostic"    
 
-# Binary sensors for better monitoring
-binary_sensor:
-  - platform: status
-    name: "Status"
-    entity_category: diagnostic
+  #  Light sensor
+  # - platform: adc
+  #   pin: 34
+  #   name: "Light Sensor"
+  #   update_interval: 60s
+  #   unit_of_measurement: lx
+  #   attenuation: 12db
+  #   filters:
+  #     - lambda: |-
+  #         return (x / 10000.0) * 2000000.0;
 
-# Text sensor for additional info
-text_sensor:
-  - platform: wifi_info
-    ip_address:
-      name: "IP Address"
-      entity_category: diagnostic
-    ssid:
-      name: "Connected SSID"
-      entity_category: diagnostic
-    mac_address:
-      name: "MAC Address"
-      entity_category: diagnostic
 
-# HA Deck configuration
 ha_deck:
   id: deck
   main_screen: ${SCREEN_MAIN}
   inactivity:
-    period: 60
+    period: 60 # seconds
+    #blank_screen: true
   on_inactivity_change:
-    lambda: |-
+    lambda:  |-
       if (x) {
-        ESP_LOGI("deck", "Screen inactive, checking brightness");
         id(check_brightness).execute();
       } else {
-        ESP_LOGI("deck", "Screen active, setting full brightness");
         id(device).set_brightness(id(screen_brightness).state);
       }
-      
   screens:
     - name: ${SCREEN_MAIN}
       widgets:
@@ -347,12 +281,14 @@ ha_deck:
           position: 5, 5
           dimensions: 207x73
           enabled: return true;
-          
+
         - type: temp-hum-card
           id: vc_temperature
           position: 217, 5
           dimensions: 101x73
           title: "balcon"
+          # text: °C
+          # icon: 󰔏
           enabled: return true;
           temperature: !lambda return str_sprintf("%0.1f°C", id(out_temperature).state);
           humidity: !lambda return str_sprintf("%.0f%%", id(out_humidity).state);
@@ -366,7 +302,7 @@ ha_deck:
           icon: 󰄻
           enabled: return true;
           value: !lambda return str_sprintf("%.0f", id(room1_air_quality_index).state);
-          
+
         - type: value-card
           id: vc_air_eco2
           position: 111, 83
@@ -375,7 +311,7 @@ ha_deck:
           icon: 󰟤
           enabled: return true;
           value: !lambda return str_sprintf("%.0f", id(room1_air_eco2).state);
-          
+
         - type: value-card
           id: vc_air_tvoc
           position: 217, 83
@@ -383,8 +319,9 @@ ha_deck:
           text: tvoc
           icon: 󰐸
           enabled: return true;
-          value: !lambda return str_sprintf("%.0f", id(room1_air_tvoc).state);
-          
+          value: !lambda return str_sprintf("%.0f", id(room1_air_tvoc).state);              
+
+        # 3rd Line
         - type: value-card
           id: vc_out_air_quality_index
           position: 5, 161
@@ -392,28 +329,18 @@ ha_deck:
           text: pm2.5
           enabled: return true;
           value: !lambda return str_sprintf("%.0f", id(out_air_quality_index).state);
-          
+
         - type: value-card
           id: vc_out_air_pm10
           position: 111, 161
           dimensions: 101x73
           text: pm10
           enabled: return true;
-          value: !lambda return str_sprintf("%.0f", id(out_air_pm10).state);
-          
+          value: !lambda return str_sprintf("%.0f", id(out_air_pm10).state);      
+
         - type: value-card
           id: vc_out_temperature
           position: 217, 161
           dimensions: 101x73
           enabled: return true;
-          value: !lambda return str_sprintf("%0.1f°C\n%.0f%%", id(weather_temperature).state, id(weather_humidity).state);
-
-# Button for manual restart
-button:
-  - platform: restart
-    name: "Restart"
-    entity_category: diagnostic
-  
-  - platform: safe_mode
-    name: "Safe Mode"
-    entity_category: diagnostic
+          value: !lambda return str_sprintf("%0.1f°C\n%.0f%%", id(weather_temperature).state, id(weather_humidity).state);  
