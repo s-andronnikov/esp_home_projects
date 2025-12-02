@@ -47,6 +47,7 @@ globals:
 time:
   - platform: homeassistant
     id: homeassistant_time
+    timezone: Europe/Kyiv
     on_time:
       - minutes: '*'
         seconds: 0
@@ -54,7 +55,12 @@ time:
           - lvgl.label.update:
               id: full_screen_time_label
               # The 24-hour format is %H:%M
-              text: !lambda 'return id(homeassistant_time).now().strftime("%H:%M");'
+              text: !lambda |-
+                auto ctime = id(homeassistant_time).now();
+                if (ctime.is_valid()) {
+                  return ctime.strftime("%H:%M");
+                }
+                return std::string("--:--");
     
 
 script:
@@ -126,6 +132,7 @@ number:
     max_value: 9
     step: 1
     optimistic: true
+    restore_value: true
     set_action:
       - globals.set:
           id: brightness_level
@@ -215,14 +222,14 @@ lvgl:
               width: "70%"
               height: 20
               align: CENTER
-              y: "44%"
+              y: "24%"
               value: 0
           - label:
               id: brightness_percent_label
               # percent label located under the bar, left-aligned inside the same centered area
               width: "70%"
               align: CENTER
-              y: "56%"
+              y: "46%"
               text: ""  # updated dynamically when brightness changes
               text_font: time_font_small
               text_color: 0xFFFFFF
