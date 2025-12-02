@@ -5,6 +5,12 @@ substitutions:
 esphome:
   name: ${devicename}
   friendly_name: ${friendly}
+  on_boot:
+    then:
+      - delay: 1s
+      - sensor.template.publish:
+          id: brightness_percent_sensor
+          state: !lambda 'return (id(brightness_level) + 1) * 10;'
 
 esp32:
   variant: esp32s3
@@ -24,6 +30,7 @@ api:
   encryption:
     key: !secret api_encryption_key
   reboot_timeout: 15min
+
 
 ota:
   - platform: esphome
@@ -48,6 +55,7 @@ time:
   - platform: homeassistant
     id: homeassistant_time
     timezone: Europe/Kyiv
+    update_interval: 30min
     on_time:
       - minutes: '*'
         seconds: 0
@@ -101,6 +109,9 @@ binary_sensor:
         - lvgl.widget.show:
             id: brightness_overlay
         - script.execute: brightness_hide
+        - sensor.template.publish:
+            id: brightness_percent_sensor
+            state: !lambda 'return (int)round((id(brightness_level) + 1) * 10.0);'
         - homeassistant.service:
             service: number.set_value
             data:
@@ -150,6 +161,18 @@ number:
       - lvgl.widget.show:
           id: brightness_overlay
       - script.execute: brightness_hide
+      - sensor.template.publish:
+          id: brightness_percent_sensor
+          state: !lambda 'return (int)round((x + 1.0) * 10.0);'
+
+# Template sensor that reflects the brightness percent in Home Assistant.
+sensor:
+  - platform: template
+    name: "TDisplay Brightness Percent"
+    id: brightness_percent_sensor
+    unit_of_measurement: '%'
+    update_interval: never
+
 
 spi:
   type: octal
