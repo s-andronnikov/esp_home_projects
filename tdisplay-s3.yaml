@@ -1,0 +1,128 @@
+substitutions:
+  devicename: esp32-tdisplay
+  friendly: esp32_tdisplay
+
+esphome:
+  name: ${devicename}
+  friendly_name: ${friendly}
+
+esp32:
+  variant: esp32s3
+  framework:
+    type: esp-idf
+  flash_size: 16MB
+
+# Enable logging
+logger:
+  level: WARN
+  logs:
+    sensor: WARN
+    ledc.output: WARN
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: 15min
+
+ota:
+  - platform: esphome
+    password: !secret esphome_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  reboot_timeout: 15min
+  power_save_mode: LIGHT
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    on_time:
+      - minutes: '*'
+        seconds: 0
+        then:
+          - lvgl.label.update:
+              id: full_screen_time_label
+              # The 24-hour format is %H:%M
+              text: !lambda 'return id(homeassistant_time).now().strftime("%H:%M");'
+    
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      inverted: true
+    name: "Button 1"
+  - platform: gpio
+    pin:
+      number: GPIO14
+      inverted: true
+    name: "Button 2"
+
+output:
+  - platform: ledc
+    frequency: 2000
+    pin: GPIO38
+    id: backlight_output
+
+light:
+  - platform: monochromatic
+    output: backlight_output
+    name: LCD Backlight
+    id: led
+    restore_mode: ALWAYS_ON
+    default_transition_length: 0s
+
+spi:
+  type: octal
+  clk_pin: 8
+  data_pins:
+    - 39
+    - 40
+    - 41
+    - 42
+    - ignore_strapping_warning: true
+      number: 45
+    - ignore_strapping_warning: true
+      number: 46
+    - 47
+    - 48
+
+psram:
+  speed: 80MHz
+  mode: octal
+
+display:
+  - platform: mipi_spi
+    model: t-display-s3
+    rotation: 270
+
+font:
+  - file: "fonts/BebasNeue-Regular.ttf" # Ensure this file is in your esphome directory
+    id: time_font
+    size: 160 # Increased so the clock renders full-screen; adjust if needed
+
+lvgl:
+  widgets:
+    - label:
+        id: full_screen_time_label
+        # Fill the entire display so the font can scale to the full area
+        width: 100%
+        height: 100%
+        # Position at top left (still 0,0) and allow centering by align/text_align
+        x: 0
+        y: 0
+        text: "--:--" # Start blank; time will be updated by on_time trigger
+        text_font: time_font
+        # White time text on a black background so the screen appears blank except for the time
+        text_color: 0xFFFFFF
+        bg_color: 0x000000
+        bg_opa: 100%
+        # Center the text within the label widget area (horizontal + vertical)
+        align: CENTER
+        text_align: center 
+        # Add LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_CLICKABLE if needed, but not for just displaying time
