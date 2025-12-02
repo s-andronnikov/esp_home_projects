@@ -91,7 +91,7 @@ binary_sensor:
             value: !lambda 'return (int)round((id(brightness_level) + 1) * 10.0);'
         - lvgl.label.update:
             id: brightness_percent_label
-            text: !lambda 'char buf[8]; sprintf(buf, "%d%%", (int)round((id(brightness_level) + 1) * 10.0)); return std::string(buf);'
+            text: !lambda 'char buf[32]; sprintf(buf, "Brightness: %d%%", (int)round((id(brightness_level) + 1) * 10.0)); return std::string(buf);'
         - lvgl.widget.show:
             id: brightness_overlay
         - script.execute: brightness_hide
@@ -139,7 +139,7 @@ number:
           value: !lambda 'return (int)round((x + 1.0) * 10.0);'
       - lvgl.label.update:
           id: brightness_percent_label
-          text: !lambda 'char buf[8]; sprintf(buf, "%d%%", (int)round((x + 1.0) * 10.0)); return std::string(buf);'
+          text: !lambda 'char buf[32]; sprintf(buf, "Brightness: %d%%", (int)round((x + 1.0) * 10.0)); return std::string(buf);'
       - lvgl.widget.show:
           id: brightness_overlay
       - script.execute: brightness_hide
@@ -175,7 +175,7 @@ font:
 
   - file: "fonts/BebasNeue-Regular.ttf"
     id: time_font_small
-    size: 32 # Smaller font for percent label in the overlay
+    size: 18 # Smaller font for percent label in the overlay (reduced)
 
 lvgl:
   widgets:
@@ -211,18 +211,19 @@ lvgl:
         widgets:
           - bar:
               id: brightness_bar
-              # centered bar
-              width: "60%"
+              # bar centered horizontally, width 70%
+              width: "70%"
               height: 20
-              x: "50%"
-              y: "48%"
+              align: CENTER
+              y: "44%"
               value: 0
           - label:
               id: brightness_percent_label
-              # percent label centered below the bar
-              x: "50%"
-              y: "58%"
+              # percent label located under the bar, left-aligned inside the same centered area
+              width: "70%"
+              align: CENTER
+              y: "56%"
               text: ""  # updated dynamically when brightness changes
               text_font: time_font_small
               text_color: 0xFFFFFF
-              text_align: center
+              text_align: left
