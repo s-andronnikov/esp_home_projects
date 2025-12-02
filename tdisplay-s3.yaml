@@ -38,6 +38,12 @@ wifi:
 
 captive_portal:
 
+globals:
+  - id: brightness_level
+    type: int
+    restore_value: true
+    initial_value: '5'  # 0..9 (10 levels)
+
 time:
   - platform: homeassistant
     id: homeassistant_time
@@ -51,6 +57,14 @@ time:
               text: !lambda 'return id(homeassistant_time).now().strftime("%H:%M");'
     
 
+script:
+  - id: brightness_hide
+    mode: restart
+    then:
+      - delay: 5s
+      - lvgl.widget.hide:
+          id: brightness_overlay
+
 binary_sensor:
   - platform: gpio
     pin:
@@ -62,6 +76,30 @@ binary_sensor:
       number: GPIO14
       inverted: true
     name: "Button 2"
+    on_press:
+      then:
+        - lambda: |- 
+            // increment level (0..9) and persist via global
+            int level = (id(brightness_level) + 1) % 10;
+            id(brightness_level) = level;
+        - light.turn_on:
+            id: led
+            # Map levels 0..9 to 10%..100% (fraction 0.1..1.0)
+            brightness: !lambda 'return (id(brightness_level) + 1) / 10.0;'
+        - lvgl.bar.update:
+            id: brightness_bar
+            value: !lambda 'return (int)round((id(brightness_level) + 1) * 10.0);'
+        - lvgl.label.update:
+            id: brightness_percent_label
+            text: !lambda 'char buf[8]; sprintf(buf, "%d%%", (int)round((id(brightness_level) + 1) * 10.0)); return std::string(buf);'
+        - lvgl.widget.show:
+            id: brightness_overlay
+        - script.execute: brightness_hide
+        - homeassistant.service:
+            service: number.set_value
+            data:
+              entity_id: number.tdisplay_brightness_level
+              value: !lambda 'return (float)id(brightness_level);'
 
 output:
   - platform: ledc
@@ -76,6 +114,35 @@ light:
     id: led
     restore_mode: ALWAYS_ON
     default_transition_length: 0s
+
+# Expose brightness level (0..9) to Home Assistant as a number entity.
+# Changing this from Home Assistant will update the stored level, set the light brightness,
+# show the progress bar and start the auto-hide timer.
+number:
+  - platform: template
+    name: tdisplay_brightness_level
+    id: brightness_level_number
+    min_value: 0
+    max_value: 9
+    step: 1
+    optimistic: true
+    set_action:
+      - globals.set:
+          id: brightness_level
+          value: !lambda 'return (int)x;'
+      - light.turn_on:
+          id: led
+          # Map number value 0..9 to 10%..100% (fraction 0.1..1.0)
+          brightness: !lambda 'return (x + 1.0) / 10.0;'
+      - lvgl.bar.update:
+          id: brightness_bar
+          value: !lambda 'return (int)round((x + 1.0) * 10.0);'
+      - lvgl.label.update:
+          id: brightness_percent_label
+          text: !lambda 'char buf[8]; sprintf(buf, "%d%%", (int)round((x + 1.0) * 10.0)); return std::string(buf);'
+      - lvgl.widget.show:
+          id: brightness_overlay
+      - script.execute: brightness_hide
 
 spi:
   type: octal
@@ -106,13 +173,17 @@ font:
     id: time_font
     size: 160 # Increased so the clock renders full-screen; adjust if needed
 
+  - file: "fonts/BebasNeue-Regular.ttf"
+    id: time_font_small
+    size: 32 # Smaller font for percent label in the overlay
+
 lvgl:
   widgets:
     - label:
         id: full_screen_time_label
         # Fill the entire display so the font can scale to the full area
-        width: 100%
-        height: 100%
+        width: "100%"
+        height: "100%"
         # Position at top left (still 0,0) and allow centering by align/text_align
         x: 0
         y: 0
@@ -126,3 +197,32 @@ lvgl:
         align: CENTER
         text_align: center 
         # Add LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_CLICKABLE if needed, but not for just displaying time
+
+    - obj:
+        id: brightness_overlay
+        # Full-screen overlay background with 50% opacity
+        width: "100%"
+        height: "100%"
+        x: 0
+        y: 0
+        bg_color: 0x000000
+        bg_opa: 50%
+        hidden: true
+        widgets:
+          - bar:
+              id: brightness_bar
+              # centered bar
+              width: "60%"
+              height: 20
+              x: "50%"
+              y: "48%"
+              value: 0
+          - label:
+              id: brightness_percent_label
+              # percent label centered below the bar
+              x: "50%"
+              y: "58%"
+              text: ""  # updated dynamically when brightness changes
+              text_font: time_font_small
+              text_color: 0xFFFFFF
+              text_align: center
