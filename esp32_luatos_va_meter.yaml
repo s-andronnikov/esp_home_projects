@@ -119,7 +119,7 @@ sensor:
       name: "Bus Voltage"
       id: bus_voltage
       icon: mdi:flash
-      accuracy_decimals: 3
+      accuracy_decimals: 2
       filters:
         - multiply: 0.9799  # Calibration factor: 14.66V / 14.96V
         - sliding_window_moving_average:
@@ -130,7 +130,7 @@ sensor:
       name: "Shunt Voltage"
       id: shunt_voltage
       icon: mdi:flash-outline
-      accuracy_decimals: 4
+      accuracy_decimals: 3
       internal: true
 
     current:
