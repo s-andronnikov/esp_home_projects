@@ -121,6 +121,7 @@ sensor:
       icon: mdi:flash
       accuracy_decimals: 3
       filters:
+        - multiply: 0.9799  # Calibration factor: 14.66V / 14.96V
         - sliding_window_moving_average:
             window_size: 5
             send_every: 1
