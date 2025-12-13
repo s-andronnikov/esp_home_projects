@@ -130,7 +130,7 @@ sensor:
       name: "Shunt Voltage"
       id: shunt_voltage
       icon: mdi:flash-outline
-      accuracy_decimals: 3
+      accuracy_decimals: 4
       internal: true
 
     current:
@@ -160,7 +160,7 @@ sensor:
     id: daily_energy
     power_id: power
     icon: mdi:counter
-    accuracy_decimals: 3
+    accuracy_decimals: 2
     filters:
       - multiply: 0.001  # Convert Wh to kWh
     unit_of_measurement: 'kWh'
@@ -171,7 +171,7 @@ sensor:
     id: peak_voltage
     icon: mdi:flash-triangle
     unit_of_measurement: "V"
-    accuracy_decimals: 3
+    accuracy_decimals: 2
     update_interval: 2s
     lambda: |-
       static float max_voltage = 0.0;
