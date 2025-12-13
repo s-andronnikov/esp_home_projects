@@ -1,0 +1,114 @@
+substitutions:
+  devicename: luatos-esp32-c3-va
+  friendly: Luatos Esp32 C3 VA Meter
+
+esphome:
+  name: ${devicename}
+  friendly_name: ${friendly}
+  platformio_options:
+    # flash_mode defaults to qio, but Air101/LuatOS requires dio mode
+    board_build.f_flash: 40000000L
+    board_build.flash_mode: dio
+    board_build.flash_size: 4MB
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: WARN
+  logs:
+    sensor: WARN
+    ledc.output: WARN
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: 15min
+
+web_server:  
+
+ota:
+  - platform: esphome
+    password: !secret esphome_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  reboot_timeout: 15min
+  power_save_mode: LIGHT
+
+captive_portal:
+
+spi:
+  clk_pin: GPIO02
+  mosi_pin: GPIO03
+  # miso_pin: GPIO10
+
+i2c:
+  sda: GPIO04
+  scl: GPIO05
+  scan: false
+  id: bus_i2c
+
+output:
+  - platform: ledc
+    pin: GPIO10
+    id: ha_display_backlight_pwm  
+
+light:
+  - platform: monochromatic
+    output: ha_display_backlight_pwm
+    id: ha_display_light
+    restore_mode: ALWAYS_ON    
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Kyiv
+    update_interval: 30min
+
+sensor:
+  # System sensors
+  - platform: uptime
+    id: sys_uptime
+    name: "Uptime"
+    entity_category: diagnostic
+    update_interval: 60s
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: diagnostic
+
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Strength"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: diagnostic
+    device_class: ""
+    accuracy_decimals: 0
+
+  - platform: internal_temperature
+    id: esp_internal_temperature
+    name: "Internal Temperature"
+    entity_category: diagnostic
+    update_interval: 60s
+
+  - platform: template
+    id: esp_memory
+    name: "Free Memory"
+    icon: mdi:memory
+    lambda: return heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024;
+    unit_of_measurement: 'kB'
+    state_class: measurement
+    entity_category: diagnostic
+    update_interval: 60s
+    accuracy_decimals: 0
