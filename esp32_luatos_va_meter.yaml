@@ -29,7 +29,11 @@ api:
     key: !secret api_encryption_key
   reboot_timeout: 15min
 
-web_server:  
+web_server:
+  port: 80
+  version: 2
+  include_internal: true
+  ota: false  
 
 ota:
   - platform: esphome
@@ -54,17 +58,6 @@ i2c:
   scl: GPIO05
   scan: false
   id: bus_i2c
-
-output:
-  - platform: ledc
-    pin: GPIO10
-    id: ha_display_backlight_pwm  
-
-light:
-  - platform: monochromatic
-    output: ha_display_backlight_pwm
-    id: ha_display_light
-    restore_mode: ALWAYS_ON    
 
 time:
   - platform: homeassistant
@@ -112,3 +105,115 @@ sensor:
     entity_category: diagnostic
     update_interval: 60s
     accuracy_decimals: 0
+
+  # INA226 Power Monitor Sensors
+  - platform: ina226
+    i2c_id: bus_i2c
+    address: 0x40
+    shunt_resistance: 0.1 ohm
+    max_current: 3.2 A
+    update_interval: 1s
+
+    bus_voltage:
+      name: "Bus Voltage"
+      id: bus_voltage
+      icon: mdi:flash
+      accuracy_decimals: 3
+      filters:
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
+
+    shunt_voltage:
+      name: "Shunt Voltage"
+      id: shunt_voltage
+      icon: mdi:flash-outline
+      accuracy_decimals: 4
+      internal: true
+
+    current:
+      name: "Current"
+      id: current
+      icon: mdi:current-dc
+      accuracy_decimals: 3
+      filters:
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
+
+    power:
+      name: "Power"
+      id: power
+      icon: mdi:lightning-bolt
+      accuracy_decimals: 3
+      filters:
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
+
+  # Calculated Energy Sensors
+  - platform: total_daily_energy
+    name: "Daily Energy"
+    id: daily_energy
+    power_id: power
+    icon: mdi:counter
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001  # Convert Wh to kWh
+    unit_of_measurement: 'kWh'
+
+  # Peak values tracking
+  - platform: template
+    name: "Peak Voltage"
+    id: peak_voltage
+    icon: mdi:flash-triangle
+    unit_of_measurement: "V"
+    accuracy_decimals: 3
+    update_interval: 2s
+    lambda: |-
+      static float max_voltage = 0.0;
+      float current_voltage = id(bus_voltage).state;
+      if (current_voltage > max_voltage || isnan(max_voltage)) {
+        max_voltage = current_voltage;
+      }
+      return max_voltage;
+
+  - platform: template
+    name: "Peak Current"
+    id: peak_current
+    icon: mdi:current-dc
+    unit_of_measurement: "A"
+    accuracy_decimals: 3
+    update_interval: 2s
+    lambda: |-
+      static float max_current = 0.0;
+      float current_amp = id(current).state;
+      if (current_amp > max_current || isnan(max_current)) {
+        max_current = current_amp;
+      }
+      return max_current;
+
+  - platform: template
+    name: "Peak Power"
+    id: peak_power
+    icon: mdi:lightning-bolt-circle
+    unit_of_measurement: "W"
+    accuracy_decimals: 3
+    update_interval: 2s
+    lambda: |-
+      static float max_power = 0.0;
+      float current_power = id(power).state;
+      if (current_power > max_power || isnan(max_power)) {
+        max_power = current_power;
+      }
+      return max_power;
+
+button:
+  - platform: template
+    name: "Reset Peak Values"
+    icon: mdi:restart
+    on_press:
+      - lambda: |-
+          id(peak_voltage).publish_state(id(bus_voltage).state);
+          id(peak_current).publish_state(id(current).state);
+          id(peak_power).publish_state(id(power).state);
