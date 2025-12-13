@@ -62,6 +62,20 @@ i2c:
   scan: false
   id: bus_i2c
 
+output:
+  - platform: gpio
+    pin:
+      number: GPIO12
+      ignore_pin_validation_error: true
+    id: led_d4
+    inverted: true  # Keep D4 LED off (LOW)
+
+status_led:
+  pin:
+    number: GPIO13
+    ignore_pin_validation_error: true
+    inverted: false  # D5 LED - Active High
+
 time:
   - platform: homeassistant
     id: homeassistant_time
