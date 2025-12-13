@@ -30,7 +30,7 @@ api:
 
 web_server:
   port: 80
-  version: 2
+  version: 3
   include_internal: true
   ota: false  
 
@@ -109,8 +109,10 @@ sensor:
   - platform: ina226
     i2c_id: bus_i2c
     address: 0x40
-    shunt_resistance: 0.1 ohm
-    max_current: 3.2 A
+    shunt_resistance: 0.002 ohm
+    max_current: 20 A
+    adc_time: 1100us
+    adc_averaging: 128
     update_interval: 1s
 
     bus_voltage:
