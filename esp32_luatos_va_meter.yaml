@@ -21,7 +21,6 @@ logger:
   level: WARN
   logs:
     sensor: WARN
-    ledc.output: WARN
 
 # Enable Home Assistant API
 api:
