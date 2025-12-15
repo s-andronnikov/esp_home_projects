@@ -134,7 +134,7 @@ sensor:
     update_interval: 1s
 
     bus_voltage:
-      name: "Bus Voltage"
+      name: "Voltage"
       id: bus_voltage
       icon: mdi:flash
       accuracy_decimals: 2
@@ -183,7 +183,7 @@ sensor:
       - multiply: 0.001  # Convert Wh to kWh
     unit_of_measurement: 'kWh'
 
-  # Peak values tracking
+  # Peak values tracking - using globals for reset functionality
   - platform: template
     name: "Peak Voltage"
     id: peak_voltage
@@ -192,12 +192,11 @@ sensor:
     accuracy_decimals: 2
     update_interval: 2s
     lambda: |-
-      static float max_voltage = 0.0;
       float current_voltage = id(bus_voltage).state;
-      if (current_voltage > max_voltage || isnan(max_voltage)) {
-        max_voltage = current_voltage;
+      if (current_voltage > id(peak_voltage).state || isnan(id(peak_voltage).state)) {
+        return current_voltage;
       }
-      return max_voltage;
+      return id(peak_voltage).state;
 
   - platform: template
     name: "Peak Current"
@@ -207,12 +206,11 @@ sensor:
     accuracy_decimals: 3
     update_interval: 2s
     lambda: |-
-      static float max_current = 0.0;
       float current_amp = id(current).state;
-      if (current_amp > max_current || isnan(max_current)) {
-        max_current = current_amp;
+      if (current_amp > id(peak_current).state || isnan(id(peak_current).state)) {
+        return current_amp;
       }
-      return max_current;
+      return id(peak_current).state;
 
   - platform: template
     name: "Peak Power"
@@ -222,12 +220,11 @@ sensor:
     accuracy_decimals: 3
     update_interval: 2s
     lambda: |-
-      static float max_power = 0.0;
       float current_power = id(power).state;
-      if (current_power > max_power || isnan(max_power)) {
-        max_power = current_power;
+      if (current_power > id(peak_power).state || isnan(id(peak_power).state)) {
+        return current_power;
       }
-      return max_power;
+      return id(peak_power).state;
 
 button:
   - platform: template
