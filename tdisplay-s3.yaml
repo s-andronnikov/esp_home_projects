@@ -89,12 +89,12 @@ binary_sensor:
     pin:
       number: GPIO0
       inverted: true
-    name: "Button 1"
+    internal: true
   - platform: gpio
     pin:
       number: GPIO14
       inverted: true
-    name: "Button 2"
+    internal: true
     on_press:
       then:
         - lambda: |- 
