@@ -11,11 +11,7 @@ esphome:
       # Restore brightness from flash and apply it immediately
       - light.turn_on:
           id: led
-          brightness: !lambda 'return (id(brightness_level) + 1) / 10.0;'
-      - delay: 1s
-      - sensor.template.publish:
-          id: brightness_percent_sensor
-          state: !lambda 'return (id(brightness_level) + 1) * 10;'
+          brightness: !lambda 'return id(brightness_percent) / 100.0;'
 
 esp32:
   variant: esp32s3
@@ -51,10 +47,10 @@ wifi:
 captive_portal:
 
 globals:
-  - id: brightness_level
+  - id: brightness_percent
     type: int
     restore_value: true
-    initial_value: '5'  # 0..9 (10 levels)
+    initial_value: '60'  # 10..100 (10% steps)
 
 time:
   - platform: homeassistant
@@ -86,42 +82,41 @@ script:
 
 binary_sensor:
   - platform: gpio
+    id: button_1
     pin:
       number: GPIO0
       inverted: true
     internal: true
   - platform: gpio
+    id: button_2
     pin:
       number: GPIO14
       inverted: true
     internal: true
     on_press:
       then:
-        - lambda: |- 
-            // increment level (0..9) and persist via global
-            int level = (id(brightness_level) + 1) % 10;
-            id(brightness_level) = level;
+        - lambda: |-
+            // increment by 10% (10..100) and wrap around
+            int percent = id(brightness_percent) + 10;
+            if (percent > 100) percent = 10;
+            id(brightness_percent) = percent;
         - light.turn_on:
             id: led
-            # Map levels 0..9 to 10%..100% (fraction 0.1..1.0)
-            brightness: !lambda 'return (id(brightness_level) + 1) / 10.0;'
+            brightness: !lambda 'return id(brightness_percent) / 100.0;'
         - lvgl.bar.update:
             id: brightness_bar
-            value: !lambda 'return (int)round((id(brightness_level) + 1) * 10.0);'
+            value: !lambda 'return id(brightness_percent);'
         - lvgl.label.update:
             id: brightness_percent_label
-            text: !lambda 'char buf[32]; sprintf(buf, "Brightness: %d%%", (int)round((id(brightness_level) + 1) * 10.0)); return std::string(buf);'
+            text: !lambda 'char buf[32]; sprintf(buf, "Brightness: %d%%", id(brightness_percent)); return std::string(buf);'
         - lvgl.widget.show:
             id: brightness_overlay
         - script.execute: brightness_hide
-        - sensor.template.publish:
-            id: brightness_percent_sensor
-            state: !lambda 'return (int)round((id(brightness_level) + 1) * 10.0);'
         - homeassistant.service:
             service: number.set_value
             data:
-              entity_id: number.tdisplay_brightness_level
-              value: !lambda 'return (float)id(brightness_level);'
+              entity_id: number.tdisplay_brightness_percent
+              value: !lambda 'return (float)id(brightness_percent);'
 
 output:
   - platform: ledc
@@ -137,46 +132,35 @@ light:
     restore_mode: ALWAYS_ON
     default_transition_length: 0s
 
-# Expose brightness level (0..9) to Home Assistant as a number entity.
-# Changing this from Home Assistant will update the stored level, set the light brightness,
+# Expose brightness as percentage (10..100) to Home Assistant as a number entity.
+# Changing this from Home Assistant will update the stored percent, set the light brightness,
 # show the progress bar and start the auto-hide timer.
 number:
   - platform: template
-    name: tdisplay_brightness_level
-    id: brightness_level_number
-    min_value: 0
-    max_value: 9
-    step: 1
+    name: TDisplay Brightness
+    id: brightness_percent_number
+    min_value: 10
+    max_value: 100
+    step: 10
+    unit_of_measurement: '%'
     optimistic: true
     restore_value: true
     set_action:
       - globals.set:
-          id: brightness_level
+          id: brightness_percent
           value: !lambda 'return (int)x;'
       - light.turn_on:
           id: led
-          # Map number value 0..9 to 10%..100% (fraction 0.1..1.0)
-          brightness: !lambda 'return (x + 1.0) / 10.0;'
+          brightness: !lambda 'return x / 100.0;'
       - lvgl.bar.update:
           id: brightness_bar
-          value: !lambda 'return (int)round((x + 1.0) * 10.0);'
+          value: !lambda 'return (int)x;'
       - lvgl.label.update:
           id: brightness_percent_label
-          text: !lambda 'char buf[32]; sprintf(buf, "Brightness: %d%%", (int)round((x + 1.0) * 10.0)); return std::string(buf);'
+          text: !lambda 'char buf[32]; sprintf(buf, "Brightness: %d%%", (int)x); return std::string(buf);'
       - lvgl.widget.show:
           id: brightness_overlay
       - script.execute: brightness_hide
-      - sensor.template.publish:
-          id: brightness_percent_sensor
-          state: !lambda 'return (int)round((x + 1.0) * 10.0);'
-
-# Template sensor that reflects the brightness percent in Home Assistant.
-sensor:
-  - platform: template
-    name: "TDisplay Brightness Percent"
-    id: brightness_percent_sensor
-    unit_of_measurement: '%'
-    update_interval: never
 
 
 spi:
