@@ -6,7 +6,12 @@ esphome:
   name: ${devicename}
   friendly_name: ${friendly}
   on_boot:
+    priority: 600  # Run early, before WiFi connection (which is priority 250)
     then:
+      # Restore brightness from flash and apply it immediately
+      - light.turn_on:
+          id: led
+          brightness: !lambda 'return (id(brightness_level) + 1) / 10.0;'
       - delay: 1s
       - sensor.template.publish:
           id: brightness_percent_sensor
