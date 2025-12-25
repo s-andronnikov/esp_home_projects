@@ -100,6 +100,8 @@ binary_sensor:
             int percent = id(brightness_percent) + 10;
             if (percent > 100) percent = 10;
             id(brightness_percent) = percent;
+            // Update the number entity to sync with HA
+            id(brightness_percent_number).publish_state(percent);
         - light.turn_on:
             id: led
             brightness: !lambda 'return id(brightness_percent) / 100.0;'
@@ -112,11 +114,6 @@ binary_sensor:
         - lvgl.widget.show:
             id: brightness_overlay
         - script.execute: brightness_hide
-        - homeassistant.service:
-            service: number.set_value
-            data:
-              entity_id: number.tdisplay_brightness_percent
-              value: !lambda 'return (float)id(brightness_percent);'
 
 output:
   - platform: ledc
@@ -137,8 +134,10 @@ light:
 # show the progress bar and start the auto-hide timer.
 number:
   - platform: template
-    name: TDisplay Brightness
     id: brightness_percent_number
+    name: "Screen Brightness"
+    icon: mdi:brightness-6
+    mode: slider
     min_value: 10
     max_value: 100
     step: 10
