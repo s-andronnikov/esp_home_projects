@@ -128,6 +128,7 @@ light:
     id: led
     restore_mode: ALWAYS_ON
     default_transition_length: 0s
+    internal: true
 
 # Expose brightness as percentage (10..100) to Home Assistant as a number entity.
 # Changing this from Home Assistant will update the stored percent, set the light brightness,
