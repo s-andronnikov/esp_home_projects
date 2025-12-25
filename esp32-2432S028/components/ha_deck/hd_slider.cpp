@@ -40,19 +40,19 @@ void HdSlider::render_() {
     lv_obj_set_x(slider_panel_, x_);
     lv_obj_set_y(slider_panel_, y_);
     lv_obj_clear_flag(slider_panel_, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_radius(slider_panel_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(slider_panel_, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(slider_panel_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(slider_panel_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(slider_panel_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(slider_panel_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(slider_panel_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(slider_panel_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(slider_panel_, 0, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(slider_panel_, lv_color_hex(0xFFFFFF), (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(slider_panel_, 0, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(slider_panel_, 0, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(slider_panel_, 0, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(slider_panel_, 0, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(slider_panel_, 0, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(slider_panel_, 0, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
 
-    lv_obj_set_style_pad_left(slider_panel_, 0, LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(slider_panel_, 0, LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(slider_panel_, 0, LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(slider_panel_, 0, LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(slider_panel_, 0, (lv_style_selector_t)LV_PART_SCROLLBAR | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(slider_panel_, 0, (lv_style_selector_t)LV_PART_SCROLLBAR | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(slider_panel_, 0, (lv_style_selector_t)LV_PART_SCROLLBAR | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(slider_panel_, 0, (lv_style_selector_t)LV_PART_SCROLLBAR | (lv_style_selector_t)LV_STATE_DEFAULT);
 
     slider_ = lv_slider_create(slider_panel_);
     lv_slider_set_range(slider_, min_, max_);
@@ -64,21 +64,21 @@ void HdSlider::render_() {
 
     lv_obj_set_height(slider_, 276);
     lv_obj_set_width(slider_, lv_pct(100));
-    lv_obj_set_style_radius(slider_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(slider_, lv_color_hex(0xFFE082), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(slider_, 25, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(slider_, 0, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(slider_, lv_color_hex(0xFFE082), (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(slider_, 25, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
 
-    lv_obj_set_style_radius(slider_, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(slider_, lv_color_hex(0xFFE082), LV_PART_INDICATOR | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(slider_, 200, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(slider_, 0, (lv_style_selector_t)LV_PART_INDICATOR | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(slider_, lv_color_hex(0xFFE082), (lv_style_selector_t)LV_PART_INDICATOR | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(slider_, 200, (lv_style_selector_t)LV_PART_INDICATOR | (lv_style_selector_t)LV_STATE_DEFAULT);
 
-    lv_obj_set_style_radius(slider_, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(slider_, lv_color_hex(0xFFE082), LV_PART_KNOB | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(slider_, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(slider_, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(slider_, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(slider_, -45, LV_PART_KNOB | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(slider_, -45, LV_PART_KNOB | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(slider_, 0, (lv_style_selector_t)LV_PART_KNOB | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(slider_, lv_color_hex(0xFFE082), (lv_style_selector_t)LV_PART_KNOB | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(slider_, 0, (lv_style_selector_t)LV_PART_KNOB | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(slider_, 0, (lv_style_selector_t)LV_PART_KNOB | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(slider_, 0, (lv_style_selector_t)LV_PART_KNOB | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(slider_, -45, (lv_style_selector_t)LV_PART_KNOB | (lv_style_selector_t)LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(slider_, -45, (lv_style_selector_t)LV_PART_KNOB | (lv_style_selector_t)LV_STATE_DEFAULT);
 
     if (text_ != "" || icon_ != "") {
         auto label = lv_label_create(slider_panel_);
@@ -88,10 +88,10 @@ void HdSlider::render_() {
 
         if (text_ != "") {
             lv_label_set_text(label, text_.c_str());
-            lv_obj_set_style_text_font(label, &Font16, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_font(label, &Font16, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
         } else {
             lv_label_set_text(label, icon_.c_str());
-            lv_obj_set_style_text_font(label, &Material24, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_font(label, &Material24, (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
         }
     }
 }

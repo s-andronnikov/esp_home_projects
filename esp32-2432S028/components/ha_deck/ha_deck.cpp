@@ -89,7 +89,7 @@ void HaDeck::set_inactivity_(bool value) {
 
 void HaDeck::create_inactivity_screen_() {
     lvgl_inactivity_screen_ = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(lvgl_inactivity_screen_, lv_color_hex(0x0), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(lvgl_inactivity_screen_, lv_color_hex(0x0), (lv_style_selector_t)LV_PART_MAIN | (lv_style_selector_t)LV_STATE_DEFAULT);
 }
 
 }  // namespace ha_deck
