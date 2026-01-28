@@ -58,7 +58,7 @@ wifi:
   #   password: !secret wifi_fallback_password
 
 # Captive portal for easy WiFi setup
-captive_portal:
+# captive_portal:
 
 # External components
 external_components:

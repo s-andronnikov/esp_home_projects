@@ -6,9 +6,11 @@ esphome:
   libraries:
     - SPI
     - Wire
-    - XPT2046_Touchscreen=https://github.com/PaulStoffregen/XPT2046_Touchscreen.git#v1.4
+    - XPT2046_Touchscreen=https://github.com/PaulStoffregen/XPT2046_Touchscreen.git
 
 esp32:
   board: esp32dev
   framework:
     type: arduino
+    advanced:
+      minimum_chip_revision: "3.1"
