@@ -150,12 +150,15 @@ lvgl:
     - id: style_voltage
       text_color: 0x00FF00 # Green
       text_font: font_large
+      pad_all: 0
     - id: style_current
       text_color: 0xFFFF00 # Yellow
       text_font: font_large
+      pad_all: 0
     - id: style_power
       text_color: 0xFF0000 # Red
       text_font: font_large
+      pad_all: 0
     - id: style_box
       border_width: 1
       border_color: 0x4444FF
@@ -191,21 +194,21 @@ lvgl:
             styles: style_voltage
             align: TOP_LEFT
             x: 2
-            y: 0
+            y: -2
             text: "00.000V"
         - label:
             id: current_value
             styles: style_current
             align: TOP_LEFT
             x: 2
-            y: 31
+            y: 28
             text: "00.000A"
         - label:
             id: power_value
             styles: style_power
             align: TOP_LEFT
             x: 2
-            y: 62
+            y: 58
             text: "000.000W"
 
         - obj: # Box 1: Peak Voltage
@@ -236,19 +239,40 @@ lvgl:
               - label: { text: "P-W", x: 2, y: 1, styles: style_peak_label }
               - label: { id: peak_w_label, x: 2, y: 13, styles: style_peak_val, text: "0.000W" }
 
+        # Consumption Bar (Energy and Charge) - NEW
+        - obj:
+            x: 0
+            y: 91
+            width: 160
+            height: 18
+            styles: style_box
+            widgets:
+              - label:
+                  id: energy_value
+                  x: 4
+                  y: 2
+                  styles: style_peak_val
+                  text: "0.000k"
+              - label:
+                  id: charge_value
+                  align: TOP_RIGHT
+                  x: -4
+                  y: 2
+                  styles: style_peak_val
+                  text: "0.000A"
+
         # Bottom Panel - 3 Sections (No Titles)
-        # Height reduced by 30%: 32 * 0.7 = ~22px
-        # Box 1: WiFi (shrunk), Box 2: IP (wider), Box 3: Load Time (53px)
+        # Height further reduced to make space: 19px
         - obj: # Box 1: WiFi
             x: 0
-            y: 106
+            y: 109
             width: 32
-            height: 22
+            height: 19
             styles: style_box
             widgets:
               - obj: # WiFi Icon Container
                   x: 6
-                  y: 4
+                  y: 2
                   width: 20
                   height: 14
                   bg_opa: 0
@@ -261,17 +285,17 @@ lvgl:
                     - obj: { id: wifi_bar_4, x: 15, y: 1, width: 3, height: 13, bg_color: 0x444444, radius: 0, border_width: 0 }
         - obj: # Box 2: IP Address
             x: 32
-            y: 106
+            y: 109
             width: 75
-            height: 22
+            height: 19
             styles: style_box
             widgets:
               - label: { id: ip_label, text: "---", align: CENTER, styles: style_bottom_label }
         - obj: # Box 3: Load Time
             x: 107
-            y: 106
+            y: 109
             width: 53
-            height: 22
+            height: 19
             styles: style_box
             widgets:
               - label: { id: active_time_label, text: "00:00", align: CENTER, styles: style_bottom_label }
@@ -353,6 +377,20 @@ interval:
             int seconds = total_seconds % 60;
             char buf[10];
             sprintf(buf, "%02d:%02d", minutes, seconds);
+            return buf;
+      - lvgl.label.update:
+          id: energy_value
+          text: !lambda |-
+            float v = id(energy_consumption).state;
+            char buf[16];
+            sprintf(buf, (v < 10.0f) ? "%.3fkWh" : "%.2fkWh", v);
+            return buf;
+      - lvgl.label.update:
+          id: charge_value
+          text: !lambda |-
+            float v = id(charge_consumption).state;
+            char buf[16];
+            sprintf(buf, (v < 10.0f) ? "%.3fAh" : "%.2fAh", v);
             return buf;
 
 sensor:
