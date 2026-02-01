@@ -322,10 +322,10 @@ interval:
             if (rssi > -70) b3 = c_on;
             if (rssi > -60) b4 = c_on;
           }
-          lv_obj_set_style_bg_color(id(wifi_bar_1).get_obj(), lv_color_hex(b1), LV_PART_MAIN);
-          lv_obj_set_style_bg_color(id(wifi_bar_2).get_obj(), lv_color_hex(b2), LV_PART_MAIN);
-          lv_obj_set_style_bg_color(id(wifi_bar_3).get_obj(), lv_color_hex(b3), LV_PART_MAIN);
-          lv_obj_set_style_bg_color(id(wifi_bar_4).get_obj(), lv_color_hex(b4), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(id(wifi_bar_1), lv_color_hex(b1), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(id(wifi_bar_2), lv_color_hex(b2), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(id(wifi_bar_3), lv_color_hex(b3), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(id(wifi_bar_4), lv_color_hex(b4), LV_PART_MAIN);
       - lvgl.label.update:
           id: ip_label
           text: !lambda |-
