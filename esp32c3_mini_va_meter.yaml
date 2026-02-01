@@ -156,12 +156,6 @@ lvgl:
     - id: style_power
       text_color: 0xFF0000 # Red
       text_font: font_large
-    - id: style_peak_label
-      text_color: 0xFFFFFF # White text for peak labels
-      text_font: font_small
-    - id: style_peak_val
-      text_color: 0xADD8E6 # Light Blue for values
-      text_font: font_medium
     - id: style_box
       border_width: 1
       border_color: 0x4444FF
@@ -169,6 +163,23 @@ lvgl:
       bg_color: 0x000000
       text_color: 0xFFFFFF
       text_font: font_small
+      pad_all: 0
+      scrollbar_mode: "OFF"
+
+    - id: style_peak_label
+      text_color: 0xAAAAAA # Dimmer white for headers
+      text_font: font_small
+      text_align: LEFT
+      pad_all: 0
+
+    - id: style_peak_val
+      text_color: 0xADD8E6 # Light Blue for values
+      text_font: font_small
+      pad_all: 0
+
+    - id: style_bottom_label
+      text_font: font_small
+      pad_all: 0
 
   pages:
     - id: main_page
@@ -181,170 +192,145 @@ lvgl:
             align: TOP_LEFT
             x: 2
             y: 0
-            text: "00.00V"
+            text: "00.000V"
         - label:
             id: current_value
             styles: style_current
             align: TOP_LEFT
             x: 2
             y: 31
-            text: "00.00A"
+            text: "00.000A"
         - label:
             id: power_value
             styles: style_power
             align: TOP_LEFT
             x: 2
             y: 62
-            text: "000.0W"
+            text: "000.000W"
 
-        # Right Panel - 4 Boxes
         - obj: # Box 1: Peak Voltage
             width: 58
-            height: 24
+            height: 35
             x: 102
             y: 0
             styles: style_box
             widgets:
-              - label: { text: "P-V", x: 2, y: 0, styles: style_peak_label }
-              - label: { id: peak_v_label, x: 2, y: 9, styles: style_peak_val, text: "00.0V" }
+              - label: { text: "P-V", x: 2, y: 1, styles: style_peak_label }
+              - label: { id: peak_v_label, x: 2, y: 13, styles: style_peak_val, text: "00.000V" }
         - obj: # Box 2: Peak Current
             width: 58
-            height: 24
+            height: 35
             x: 102
-            y: 24
+            y: 35
             styles: style_box
             widgets:
-              - label: { text: "P-I", x: 2, y: 0, styles: style_peak_label }
-              - label: { id: peak_a_label, x: 2, y: 9, styles: style_peak_val, text: "0.00A" }
+              - label: { text: "P-I", x: 2, y: 1, styles: style_peak_label }
+              - label: { id: peak_a_label, x: 2, y: 13, styles: style_peak_val, text: "0.000A" }
         - obj: # Box 3: Peak Power
             width: 58
-            height: 24
+            height: 36
             x: 102
-            y: 48
+            y: 70
             styles: style_box
             widgets:
-              - label: { text: "P-W", x: 2, y: 0, styles: style_peak_label }
-              - label: { id: peak_w_label, x: 2, y: 9, styles: style_peak_val, text: "0.00W" }
-        - obj: # Box 4: State/Placeholder (Matches Image CV/CC area)
-            width: 58
-            height: 23
-            x: 102
-            y: 72
-            styles: style_box
-            widgets:
-              - label: { text: "STAT", x: 2, y: 0, styles: style_peak_label }
-              - label: { text: "OK", x: 2, y: 9, styles: style_peak_val }
+              - label: { text: "P-W", x: 2, y: 1, styles: style_peak_label }
+              - label: { id: peak_w_label, x: 2, y: 13, styles: style_peak_val, text: "0.000W" }
 
-        # Bottom Panel - 5 Icon Boxes
-        # 160 / 5 = 32 pixels per box
+        # Bottom Panel - 3 Sections (No Titles)
+        # Height reduced by 30%: 32 * 0.7 = ~22px
+        # 160 / 3 = ~53 pixels per box
         - obj: # Box 1: WiFi
             x: 0
-            y: 96
-            width: 32
-            height: 32
+            y: 106
+            width: 53
+            height: 22
             styles: style_box
             widgets:
-              - label: { id: wifi_icon, text: "WIFI", align: CENTER }
-        - obj: # Box 2: IP Part 1 (or simple status)
-            x: 32
-            y: 96
-            width: 32
-            height: 32
+              - obj: # WiFi Icon Container
+                  x: 17
+                  y: 4
+                  width: 20
+                  height: 14
+                  bg_opa: 0
+                  border_width: 0
+                  pad_all: 0
+                  widgets:
+                    - obj: { id: wifi_bar_1, x: 0, y: 10, width: 3, height: 4, bg_color: 0x444444, radius: 0, border_width: 0 }
+                    - obj: { id: wifi_bar_2, x: 5, y: 7, width: 3, height: 7, bg_color: 0x444444, radius: 0, border_width: 0 }
+                    - obj: { id: wifi_bar_3, x: 10, y: 4, width: 3, height: 10, bg_color: 0x444444, radius: 0, border_width: 0 }
+                    - obj: { id: wifi_bar_4, x: 15, y: 1, width: 3, height: 13, bg_color: 0x444444, radius: 0, border_width: 0 }
+        - obj: # Box 2: IP Address
+            x: 53
+            y: 106
+            width: 54
+            height: 22
             styles: style_box
             widgets:
-              - label: { id: ip_label_1, text: "192.", align: CENTER, text_font: font_small }
-        - obj: # Box 3: IP Part 2
-            x: 64
-            y: 96
-            width: 32
-            height: 32
+              - label: { id: ip_label, text: "---", align: CENTER, styles: style_bottom_label }
+        - obj: # Box 3: Load Time
+            x: 107
+            y: 106
+            width: 53
+            height: 22
             styles: style_box
             widgets:
-              - label: { id: ip_label_2, text: "168.", align: CENTER, text_font: font_small }
-        - obj: # Box 4: Load Time
-            x: 96
-            y: 96
-            width: 32
-            height: 32
-            styles: style_box
-            widgets:
-              - label: { id: active_time_label, text: "00:00", align: CENTER, text_font: font_small }
-        - obj: # Box 5: Mode (e.g., M0 or CV)
-            x: 128
-            y: 96
-            width: 32
-            height: 32
-            styles: style_box
-            widgets:
-              - label: { text: "M0", align: CENTER }
+              - label: { id: active_time_label, text: "00:00", align: CENTER, styles: style_bottom_label }
 
 interval:
-  - interval: 500ms
+  - interval: 100ms
     then:
       - lvgl.label.update:
           id: voltage_value
           text:
-            format: "%.2fV"
+            format: "%.3fV"
             args: [ 'id(bus_voltage).state' ]
       - lvgl.label.update:
           id: current_value
           text:
-            format: "%.2fA"
+            format: "%.3fA"
             args: [ 'id(current).state' ]
       - lvgl.label.update:
           id: power_value
           text:
-            format: "%.1fW"
+            format: "%.3fW"
             args: [ 'id(power).state' ]
       - lvgl.label.update:
           id: peak_v_label
           text:
-            format: "%.1fV"
+            format: "%.3fV"
             args: [ 'id(peak_voltage).state' ]
       - lvgl.label.update:
           id: peak_a_label
           text:
-            format: "%.2fA"
+            format: "%.3fA"
             args: [ 'id(peak_current).state' ]
       - lvgl.label.update:
           id: peak_w_label
           text:
-            format: "%.2fW"
+            format: "%.3fW"
             args: [ 'id(peak_power).state' ]
+      - lvgl.obj.update:
+          id: main_page
+      - lambda: |-
+          uint32_t c_off = 0x444444;
+          uint32_t c_on = 0xFFFFFF;
+          uint32_t b1 = c_off, b2 = c_off, b3 = c_off, b4 = c_off;
+          if (id(wifi_signal_db).has_state()) {
+            float rssi = id(wifi_signal_db).state;
+            if (rssi > -90) b1 = c_on;
+            if (rssi > -80) b2 = c_on;
+            if (rssi > -70) b3 = c_on;
+            if (rssi > -60) b4 = c_on;
+          }
+          lv_obj_set_style_bg_color(id(wifi_bar_1).get_obj(), lv_color_hex(b1), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(id(wifi_bar_2).get_obj(), lv_color_hex(b2), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(id(wifi_bar_3).get_obj(), lv_color_hex(b3), LV_PART_MAIN);
+          lv_obj_set_style_bg_color(id(wifi_bar_4).get_obj(), lv_color_hex(b4), LV_PART_MAIN);
       - lvgl.label.update:
-          id: wifi_icon
+          id: ip_label
           text: !lambda |-
             if (id(wifi_signal_db).has_state()) {
-              float rssi = id(wifi_signal_db).state;
-              if (rssi > -60) return "WIFI";
-              if (rssi > -80) return "wifi";
-              return "wf..";
-            } else {
-              return "OFF";
-            }
-      - lvgl.label.update:
-          id: ip_label_1
-          text: !lambda |-
-            if (id(wifi_signal_db).has_state()) {
-              std::string ip = id(wifi_parent).get_ip_addresses()[0].str();
-              size_t first_dot = ip.find('.');
-              size_t second_dot = ip.find('.', first_dot + 1);
-              if (second_dot != std::string::npos) {
-                return ip.substr(0, second_dot + 1).c_str();
-              }
-              return ip.c_str();
-            }
-            return "---.";
-      - lvgl.label.update:
-          id: ip_label_2
-          text: !lambda |-
-            if (id(wifi_signal_db).has_state()) {
-              std::string ip = id(wifi_parent).get_ip_addresses()[0].str();
-              size_t first_dot = ip.find('.');
-              size_t second_dot = ip.find('.', first_dot + 1);
-              if (second_dot != std::string::npos) {
-                return ip.substr(second_dot + 1).c_str();
-              }
+              return id(wifi_parent).get_ip_addresses()[0].str().c_str();
             }
             return "---";
       - lvgl.label.update:
@@ -420,21 +406,21 @@ sensor:
     shunt_resistance: 0.002 ohm
     max_current: 20 A
     adc_time: 1100us
-    adc_averaging: 128
-    update_interval: 1s
+    adc_averaging: 16
+    update_interval: 100ms
 
     bus_voltage:
       name: "Voltage"
       id: bus_voltage
       icon: mdi:flash
-      accuracy_decimals: 2
+      accuracy_decimals: 3
       web_server:
         sorting_group_id: measurements
         sorting_weight: 10
       filters:
         - multiply: 0.9799  # Calibration factor: 14.66V / 14.96V
         - sliding_window_moving_average:
-            window_size: 5
+            window_size: 4
             send_every: 1
 
     shunt_voltage:
@@ -459,7 +445,7 @@ sensor:
         - multiply: 0.545
         - lambda: "return (abs(x) < 0.001) ? 0.0 : x;"
         - sliding_window_moving_average:
-            window_size: 5
+            window_size: 4
             send_every: 1
 
     power:
@@ -472,7 +458,7 @@ sensor:
         sorting_weight: 30
       filters:
         - sliding_window_moving_average:
-            window_size: 5
+            window_size: 4
             send_every: 1
 
   # Peak values tracking - using globals for reset functionality
@@ -481,11 +467,11 @@ sensor:
     id: peak_voltage
     icon: mdi:flash-triangle
     unit_of_measurement: "V"
-    accuracy_decimals: 2
+    accuracy_decimals: 3
     web_server:
       sorting_group_id: peak_values
       sorting_weight: 10
-    update_interval: 2s
+    update_interval: 100ms
     lambda: |-
       float current_voltage = id(bus_voltage).state;
       if (current_voltage > id(peak_voltage).state || isnan(id(peak_voltage).state)) {
@@ -502,7 +488,7 @@ sensor:
     web_server:
       sorting_group_id: peak_values
       sorting_weight: 20
-    update_interval: 2s
+    update_interval: 100ms
     lambda: |-
       float current_amp = id(current).state;
       if (current_amp > id(peak_current).state || isnan(id(peak_current).state)) {
@@ -519,7 +505,7 @@ sensor:
     web_server:
       sorting_group_id: peak_values
       sorting_weight: 30
-    update_interval: 2s
+    update_interval: 100ms
     lambda: |-
       float current_power = id(power).state;
       if (current_power > id(peak_power).state || isnan(id(peak_power).state)) {
