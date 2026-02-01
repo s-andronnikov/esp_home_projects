@@ -209,27 +209,27 @@ lvgl:
             text: "000.000W"
 
         - obj: # Box 1: Peak Voltage
-            width: 58
+            width: 53
             height: 35
-            x: 102
+            x: 107
             y: 0
             styles: style_box
             widgets:
               - label: { text: "P-V", x: 2, y: 1, styles: style_peak_label }
               - label: { id: peak_v_label, x: 2, y: 13, styles: style_peak_val, text: "00.000V" }
         - obj: # Box 2: Peak Current
-            width: 58
+            width: 53
             height: 35
-            x: 102
+            x: 107
             y: 35
             styles: style_box
             widgets:
               - label: { text: "P-I", x: 2, y: 1, styles: style_peak_label }
               - label: { id: peak_a_label, x: 2, y: 13, styles: style_peak_val, text: "0.000A" }
         - obj: # Box 3: Peak Power
-            width: 58
+            width: 53
             height: 36
-            x: 102
+            x: 107
             y: 70
             styles: style_box
             widgets:
@@ -238,16 +238,16 @@ lvgl:
 
         # Bottom Panel - 3 Sections (No Titles)
         # Height reduced by 30%: 32 * 0.7 = ~22px
-        # 160 / 3 = ~53 pixels per box
+        # Box 1: WiFi (shrunk), Box 2: IP (wider), Box 3: Load Time (53px)
         - obj: # Box 1: WiFi
             x: 0
             y: 106
-            width: 53
+            width: 32
             height: 22
             styles: style_box
             widgets:
               - obj: # WiFi Icon Container
-                  x: 17
+                  x: 6
                   y: 4
                   width: 20
                   height: 14
@@ -260,9 +260,9 @@ lvgl:
                     - obj: { id: wifi_bar_3, x: 10, y: 4, width: 3, height: 10, bg_color: 0x444444, radius: 0, border_width: 0 }
                     - obj: { id: wifi_bar_4, x: 15, y: 1, width: 3, height: 13, bg_color: 0x444444, radius: 0, border_width: 0 }
         - obj: # Box 2: IP Address
-            x: 53
+            x: 32
             y: 106
-            width: 54
+            width: 75
             height: 22
             styles: style_box
             widgets:
@@ -281,34 +281,46 @@ interval:
     then:
       - lvgl.label.update:
           id: voltage_value
-          text:
-            format: "%.3fV"
-            args: [ 'id(bus_voltage).state' ]
+          text: !lambda |-
+            float v = id(bus_voltage).state;
+            char buf[16];
+            sprintf(buf, (v < 10.0f) ? "%.3fV" : "%.2fV", v);
+            return buf;
       - lvgl.label.update:
           id: current_value
-          text:
-            format: "%.3fA"
-            args: [ 'id(current).state' ]
+          text: !lambda |-
+            float v = id(current).state;
+            char buf[16];
+            sprintf(buf, (v < 10.0f) ? "%.3fA" : "%.2fA", v);
+            return buf;
       - lvgl.label.update:
           id: power_value
-          text:
-            format: "%.3fW"
-            args: [ 'id(power).state' ]
+          text: !lambda |-
+            float v = id(power).state;
+            char buf[16];
+            sprintf(buf, (v < 10.0f) ? "%.3fW" : "%.2fW", v);
+            return buf;
       - lvgl.label.update:
           id: peak_v_label
-          text:
-            format: "%.3fV"
-            args: [ 'id(peak_voltage).state' ]
+          text: !lambda |-
+            float v = id(peak_voltage).state;
+            char buf[16];
+            sprintf(buf, (v < 10.0f) ? "%.3fV" : "%.2fV", v);
+            return buf;
       - lvgl.label.update:
           id: peak_a_label
-          text:
-            format: "%.3fA"
-            args: [ 'id(peak_current).state' ]
+          text: !lambda |-
+            float v = id(peak_current).state;
+            char buf[16];
+            sprintf(buf, (v < 10.0f) ? "%.3fA" : "%.2fA", v);
+            return buf;
       - lvgl.label.update:
           id: peak_w_label
-          text:
-            format: "%.3fW"
-            args: [ 'id(peak_power).state' ]
+          text: !lambda |-
+            float v = id(peak_power).state;
+            char buf[16];
+            sprintf(buf, (v < 10.0f) ? "%.3fW" : "%.2fW", v);
+            return buf;
       - lvgl.obj.update:
           id: main_page
       - lambda: |-
