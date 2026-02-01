@@ -1,0 +1,421 @@
+substitutions:
+  devicename: esp32c3-mini-va
+  friendly: Esp32 VA Meter
+
+esphome:
+  name: ${devicename}
+  friendly_name: ${friendly}
+  platformio_options:
+    board_build.f_flash: 40000000L
+    board_build.flash_mode: dio
+    board_build.flash_size: 4MB
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: WARN
+  logs:
+    sensor: WARN
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: 15min
+
+web_server:
+  port: 80
+  version: 3
+  include_internal: true
+  ota: false
+  sorting_groups:
+    - id: measurements
+      name: "Measurements"
+      sorting_weight: 10
+    - id: peak_values
+      name: "Peak Values"
+      sorting_weight: 20
+    - id: consumption
+      name: "Power Consumption"
+      sorting_weight: 30
+    - id: diagnostic
+      name: "Diagnostic"
+      sorting_weight: 100  
+
+ota:
+  - platform: esphome
+    password: !secret esphome_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  reboot_timeout: 15min
+  power_save_mode: LIGHT
+
+  ap:
+    ssid: ${devicename}
+    password: "01234567890"
+
+captive_portal:
+
+i2c:
+  sda: GPIO08
+  scl: GPIO09
+  scan: false
+  id: bus_i2c
+
+#output:
+#  - platform: gpio
+#    pin:
+#      number: GPIO12
+#      ignore_pin_validation_error: true
+#    id: led_d4
+#    inverted: true  # Keep D4 LED off (LOW)
+
+#status_led:
+#  pin:
+#    number: GPIO13
+#    ignore_pin_validation_error: true
+#    inverted: false  # D5 LED - Active High
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Kyiv
+    update_interval: 30min
+
+spi:
+  clk_pin: GPIO04
+  mosi_pin: GPIO07
+
+output:
+  - platform: ledc
+    pin: GPIO10
+    id: lcd_backlight
+
+light:
+  - platform: monochromatic
+    output: lcd_backlight
+    name: "LCD Backlight"
+    id: backlight
+    restore_mode: RESTORE_DEFAULT_ON
+    default_transition_length: 0s
+    on_turn_on:
+      - light.control:
+          id: backlight
+          brightness: 50%
+
+display:
+  - platform: ili9xxx
+#  - platform: st7735
+    id: tft_display
+    model: ST7735
+    invert_colors: false
+    show_test_card: false
+    dimensions:
+      height: 160
+      width: 128
+    cs_pin: GPIO05
+    dc_pin: GPIO06
+    reset_pin: GPIO00
+    rotation: 0
+
+lvgl:
+  log_level: WARN
+  displays:
+    - tft_display
+
+  style_definitions:
+    - id: style_screen
+      bg_color: 0x000000
+      text_color: 0xFFFFFF
+
+  pages:
+    - id: main_page
+      styles: style_screen
+      widgets:
+        - label:
+            id: voltage_label
+            text: "Voltage:"
+            align: TOP_LEFT
+            x: 10
+            y: 10
+        - label:
+            id: voltage_value
+            align: TOP_LEFT
+            x: 10
+            y: 30
+            text: "0.00 V"
+
+        - label:
+            id: current_label
+            text: "Current:"
+            align: TOP_LEFT
+            x: 10
+            y: 55
+        - label:
+            id: current_value
+            align: TOP_LEFT
+            x: 10
+            y: 75
+            text: "0.000 A"
+
+        - label:
+            id: power_label
+            text: "Power:"
+            align: TOP_LEFT
+            x: 10
+            y: 100
+        - label:
+            id: power_value
+            align: TOP_LEFT
+            x: 10
+            y: 120
+            text: "0.000 W"
+
+interval:
+  - interval: 500ms
+    then:
+      - lvgl.label.update:
+          id: voltage_value
+          text:
+            format: "%.2f V"
+            args: [ 'id(bus_voltage).state' ]
+      - lvgl.label.update:
+          id: current_value
+          text:
+            format: "%.3f A"
+            args: [ 'id(current).state' ]
+      - lvgl.label.update:
+          id: power_value
+          text:
+            format: "%.3f W"
+            args: [ 'id(power).state' ]
+
+sensor:
+  # System sensors
+  - platform: uptime
+    id: sys_uptime
+    name: "Uptime"
+    entity_category: diagnostic
+    update_interval: 60s
+    web_server:
+      sorting_group_id: diagnostic
+      sorting_weight: 10
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: diagnostic
+    web_server:
+      sorting_group_id: diagnostic
+      sorting_weight: 20
+
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Strength"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: diagnostic
+    device_class: ""
+    accuracy_decimals: 0
+    web_server:
+      sorting_group_id: diagnostic
+      sorting_weight: 30
+
+  - platform: internal_temperature
+    id: esp_internal_temperature
+    name: "Internal Temperature"
+    entity_category: diagnostic
+    update_interval: 60s
+    web_server:
+      sorting_group_id: diagnostic
+      sorting_weight: 40
+
+  - platform: template
+    id: esp_memory
+    name: "Free Memory"
+    icon: mdi:memory
+    lambda: return heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024;
+    unit_of_measurement: 'kB'
+    state_class: measurement
+    entity_category: diagnostic
+    update_interval: 60s
+    accuracy_decimals: 0
+    web_server:
+      sorting_group_id: diagnostic
+      sorting_weight: 50
+
+  # INA226 Power Monitor Sensors
+  - platform: ina226
+    i2c_id: bus_i2c
+    address: 0x40
+    shunt_resistance: 0.002 ohm
+    max_current: 20 A
+    adc_time: 1100us
+    adc_averaging: 128
+    update_interval: 1s
+
+    bus_voltage:
+      name: "Voltage"
+      id: bus_voltage
+      icon: mdi:flash
+      accuracy_decimals: 2
+      web_server:
+        sorting_group_id: measurements
+        sorting_weight: 10
+      filters:
+        - multiply: 0.9799  # Calibration factor: 14.66V / 14.96V
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
+
+    shunt_voltage:
+      name: "Shunt Voltage"
+      id: shunt_voltage
+      icon: mdi:flash-outline
+      accuracy_decimals: 4
+      internal: false
+      web_server:
+        sorting_group_id: measurements
+        sorting_weight: 40
+
+    current:
+      name: "Current"
+      id: current
+      icon: mdi:current-dc
+      accuracy_decimals: 3
+      web_server:
+        sorting_group_id: measurements
+        sorting_weight: 20
+      filters:
+        - multiply: 0.545  # Calibration factor: 0.5A / 0.918A
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
+
+    power:
+      name: "Power"
+      id: power
+      icon: mdi:lightning-bolt
+      accuracy_decimals: 3
+      web_server:
+        sorting_group_id: measurements
+        sorting_weight: 30
+      filters:
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
+
+  # Peak values tracking - using globals for reset functionality
+  - platform: template
+    name: "Peak Voltage"
+    id: peak_voltage
+    icon: mdi:flash-triangle
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    web_server:
+      sorting_group_id: peak_values
+      sorting_weight: 10
+    update_interval: 2s
+    lambda: |-
+      float current_voltage = id(bus_voltage).state;
+      if (current_voltage > id(peak_voltage).state || isnan(id(peak_voltage).state)) {
+        return current_voltage;
+      }
+      return id(peak_voltage).state;
+
+  - platform: template
+    name: "Peak Current"
+    id: peak_current
+    icon: mdi:current-dc
+    unit_of_measurement: "A"
+    accuracy_decimals: 3
+    web_server:
+      sorting_group_id: peak_values
+      sorting_weight: 20
+    update_interval: 2s
+    lambda: |-
+      float current_amp = id(current).state;
+      if (current_amp > id(peak_current).state || isnan(id(peak_current).state)) {
+        return current_amp;
+      }
+      return id(peak_current).state;
+
+  - platform: template
+    name: "Peak Power"
+    id: peak_power
+    icon: mdi:lightning-bolt-circle
+    unit_of_measurement: "W"
+    accuracy_decimals: 3
+    web_server:
+      sorting_group_id: peak_values
+      sorting_weight: 30
+    update_interval: 2s
+    lambda: |-
+      float current_power = id(power).state;
+      if (current_power > id(peak_power).state || isnan(id(peak_power).state)) {
+        return current_power;
+      }
+      return id(peak_power).state;
+
+  # Power Consumption Sensors
+  - platform: integration
+    name: "Energy Consumption"
+    id: energy_consumption
+    sensor: power
+    time_unit: h
+    icon: mdi:lightning-bolt
+    accuracy_decimals: 3
+    unit_of_measurement: 'kWh'
+    device_class: energy
+    state_class: total_increasing
+    web_server:
+      sorting_group_id: consumption
+      sorting_weight: 10
+    filters:
+      - multiply: 0.001  # Convert Wh to kWh
+
+  - platform: integration
+    name: "Charge Consumption"
+    id: charge_consumption
+    sensor: current
+    time_unit: h
+    icon: mdi:current-dc
+    accuracy_decimals: 3
+    unit_of_measurement: 'Ah'
+    state_class: total_increasing
+    web_server:
+      sorting_group_id: consumption
+      sorting_weight: 20
+
+button:
+  - platform: template
+    name: "Reset Peak Values"
+    icon: mdi:restart
+    web_server:
+      sorting_group_id: peak_values
+      sorting_weight: 40
+    on_press:
+      - lambda: |-
+          id(peak_voltage).publish_state(id(bus_voltage).state);
+          id(peak_current).publish_state(id(current).state);
+          id(peak_power).publish_state(id(power).state);
+
+  - platform: template
+    name: "Reset Consumption"
+    icon: mdi:restart
+    web_server:
+      sorting_group_id: consumption
+      sorting_weight: 30
+    on_press:
+      - lambda: |-
+          id(energy_consumption).publish_state(0.0);
+          id(charge_consumption).publish_state(0.0);
