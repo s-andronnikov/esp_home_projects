@@ -160,6 +160,24 @@ lvgl:
       pad_all: 0
       scrollbar_mode: "OFF"
 
+    - id: style_box_top
+      border_width: 0
+      radius: 0
+      bg_color: 0x000000
+      text_color: 0xFFFFFF
+      text_font: font_small
+      pad_all: 0
+      scrollbar_mode: "OFF"
+
+    - id: style_box_bottom
+      border_width: 0
+      radius: 0
+      bg_color: 0x000000
+      text_color: 0xFFFFFF
+      text_font: font_small
+      pad_all: 0
+      scrollbar_mode: "OFF"
+
     - id: style_peak_label
       text_color: 0xAAAAAA # Dimmer white for headers
       text_font: font_small
@@ -191,103 +209,29 @@ lvgl:
     - id: main_page
       styles: style_screen
       widgets:
-        # Left Panel - Main Values
-        - label:
-            id: voltage_value
-            styles: style_voltage
-            align: TOP_LEFT
-            x: 2
-            y: -2
-            text: "00.000V"
-        - label:
-            id: current_value
-            styles: style_current
-            align: TOP_LEFT
-            x: 2
-            y: 28
-            text: "00.000A"
-        - label:
-            id: power_value
-            styles: style_power
-            align: TOP_LEFT
-            x: 2
-            y: 58
-            text: "000.000W"
-
-        - obj: # Box 1: Peak Voltage
-            width: 53
-            height: 35
-            x: 107
-            y: 0
-            styles: style_box
-            widgets:
-              - label: { text: "P-V", x: 2, y: 1, styles: style_peak_label }
-              - label: { id: peak_v_label, x: 2, y: 13, styles: style_peak_val, text: "00.000V" }
-        - obj: # Box 2: Peak Current
-            width: 53
-            height: 35
-            x: 107
-            y: 35
-            styles: style_box
-            widgets:
-              - label: { text: "P-I", x: 2, y: 1, styles: style_peak_label }
-              - label: { id: peak_a_label, x: 2, y: 13, styles: style_peak_val, text: "0.000A" }
-        - obj: # Box 3: Peak Power
-            width: 53
-            height: 36
-            x: 107
-            y: 70
-            styles: style_box
-            widgets:
-              - label: { text: "P-W", x: 2, y: 1, styles: style_peak_label }
-              - label: { id: peak_w_label, x: 2, y: 13, styles: style_peak_val, text: "0.000W" }
-
-        # Consumption Bar (Energy and Charge) - NEW
+        # LEFT PANEL - TOP (WiFi & IP)
         - obj:
             x: 0
-            y: 91
+            y: 0
             width: 107
-            height: 18
-            styles: style_consumption_box
+            height: 20
+            styles: style_box_top
             widgets:
-              - obj: # Top Border
+              - obj: # Bottom Border
                   x: 0
-                  y: 0
+                  y: 19
                   width: 107
                   height: 1
                   styles: style_border_line
-              - obj: # Left Border
-                  x: 0
+              - obj: # Right Border
+                  x: 106
                   y: 0
                   width: 1
-                  height: 18
+                  height: 20
                   styles: style_border_line
-              - label:
-                  id: energy_value
-                  x: 4
-                  y: 2
-                  styles: style_peak_val
-                  text: "0.000k"
-              - label:
-                  id: charge_value
-                  align: TOP_RIGHT
-                  x: -2
-                  y: 2
-                  styles: style_peak_val
-                  text: "0.000A"
-
-        # Bottom Panel - 3 Sections (No Titles)
-        # Height further reduced to make space: 19px
-        - obj: # Box 1: WiFi
-            x: 0
-            y: 109
-            width: 32
-            height: 19
-            styles: style_box
-            widgets:
               - obj: # WiFi Icon Container
-                  x: 6
-                  y: 2
+                  x: 4
+                  y: 3
                   width: 20
                   height: 14
                   bg_opa: 0
@@ -298,22 +242,102 @@ lvgl:
                     - obj: { id: wifi_bar_2, x: 5, y: 7, width: 3, height: 7, bg_color: 0x444444, radius: 0, border_width: 0 }
                     - obj: { id: wifi_bar_3, x: 10, y: 4, width: 3, height: 10, bg_color: 0x444444, radius: 0, border_width: 0 }
                     - obj: { id: wifi_bar_4, x: 15, y: 1, width: 3, height: 13, bg_color: 0x444444, radius: 0, border_width: 0 }
-        - obj: # Box 2: IP Address
-            x: 32
-            y: 109
-            width: 75
-            height: 19
-            styles: style_box
+              - label: { id: ip_label, text: "---", x: 28, y: 3, styles: style_bottom_label }
+
+        # LEFT PANEL - MIDDLE (V, A, P)
+        - label:
+            id: voltage_value
+            styles: style_voltage
+            align: TOP_LEFT
+            x: 2
+            y: 18 # Adjusted Y due to top panel
+            text: "00.000V"
+        - label:
+            id: current_value
+            styles: style_current
+            align: TOP_LEFT
+            x: 2
+            y: 45
+            text: "00.000A"
+        - label:
+            id: power_value
+            styles: style_power
+            align: TOP_LEFT
+            x: 2
+            y: 72
+            text: "000.000W"
+
+        # LEFT PANEL - BOTTOM (Energy & Charge)
+        - obj:
+            x: 0
+            y: 108
+            width: 107
+            height: 20
+            styles: style_box_bottom
             widgets:
-              - label: { id: ip_label, text: "---", align: CENTER, styles: style_bottom_label }
-        - obj: # Box 3: Load Time
-            x: 107
-            y: 109
+              - obj: # Top Border
+                  x: 0
+                  y: 0
+                  width: 107
+                  height: 1
+                  styles: style_border_line
+              - obj: # Right Border
+                  x: 106
+                  y: 0
+                  width: 1
+                  height: 20
+                  styles: style_border_line
+              - label:
+                  id: energy_value
+                  x: 4
+                  y: 3
+                  styles: style_peak_val
+                  text: "0.000k"
+              - label:
+                  id: charge_value
+                  align: TOP_RIGHT
+                  x: -2
+                  y: 3
+                  styles: style_peak_val
+                  text: "0.000A"
+
+        # RIGHT PANEL - 4 Sections (Peak VAP + Load Time)
+        - obj: # Box 1: Peak Voltage
             width: 53
-            height: 19
+            height: 32
+            x: 107
+            y: 0
             styles: style_box
             widgets:
-              - label: { id: active_time_label, text: "00:00", align: CENTER, styles: style_bottom_label }
+              - label: { text: "P-V", x: 2, y: 1, styles: style_peak_label }
+              - label: { id: peak_v_label, x: 2, y: 12, styles: style_peak_val, text: "00.000V" }
+        - obj: # Box 2: Peak Current
+            width: 53
+            height: 32
+            x: 107
+            y: 32
+            styles: style_box
+            widgets:
+              - label: { text: "P-I", x: 2, y: 1, styles: style_peak_label }
+              - label: { id: peak_a_label, x: 2, y: 12, styles: style_peak_val, text: "0.000A" }
+        - obj: # Box 3: Peak Power
+            width: 53
+            height: 32
+            x: 107
+            y: 64
+            styles: style_box
+            widgets:
+              - label: { text: "P-W", x: 2, y: 1, styles: style_peak_label }
+              - label: { id: peak_w_label, x: 2, y: 12, styles: style_peak_val, text: "0.000W" }
+        - obj: # Box 4: Load Time
+            width: 53
+            height: 32
+            x: 107
+            y: 96
+            styles: style_box
+            widgets:
+              - label: { text: "TIME", x: 2, y: 1, styles: style_peak_label }
+              - label: { id: active_time_label, x: 2, y: 12, styles: style_bottom_label, text: "00:00" }
 
 interval:
   - interval: 100ms
