@@ -66,24 +66,15 @@ wifi:
 captive_portal:
 
 i2c:
-  sda: GPIO08
-  scl: GPIO09
+  sda: GPIO01
+  scl: GPIO02
   scan: false
   id: bus_i2c
 
-#output:
-#  - platform: gpio
-#    pin:
-#      number: GPIO12
-#      ignore_pin_validation_error: true
-#    id: led_d4
-#    inverted: true  # Keep D4 LED off (LOW)
-
-#status_led:
-#  pin:
-#    number: GPIO13
-#    ignore_pin_validation_error: true
-#    inverted: false  # D5 LED - Active High
+status_led:
+  pin:
+    number: GPIO8
+    inverted: true
 
 time:
   - platform: homeassistant
@@ -493,6 +484,7 @@ sensor:
         sorting_weight: 10
       filters:
         - multiply: 0.9799  # Calibration factor: 14.66V / 14.96V
+        - lambda: "return (abs(x) < 0.001) ? 0.0 : x;"
         - sliding_window_moving_average:
             window_size: 4
             send_every: 1
@@ -531,6 +523,7 @@ sensor:
         sorting_group_id: measurements
         sorting_weight: 30
       filters:
+        - lambda: "return (abs(x) < 0.001) ? 0.0 : x;"
         - sliding_window_moving_average:
             window_size: 4
             send_every: 1
