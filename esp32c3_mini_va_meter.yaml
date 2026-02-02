@@ -150,6 +150,7 @@ lvgl:
       text_color: 0xFF0000 # Red
       text_font: font_large
       pad_all: 0
+
     - id: style_box
       border_width: 1
       border_color: 0x4444FF
@@ -177,6 +178,29 @@ lvgl:
       text_font: font_small
       pad_all: 0
       scrollbar_mode: "OFF"
+
+    - id: style_unit_box
+      border_width: 1
+      border_color: 0xFFFFFF # White
+      radius: 0
+      bg_color: 0x000000
+      text_color: 0xFFFFFF
+      text_font: font_small
+      pad_all: 0
+      scrollbar_mode: "OFF"
+
+    - id: style_unit_label_v
+      text_color: 0x00FF00
+      text_font: font_medium
+      pad_all: 0
+    - id: style_unit_label_a
+      text_color: 0xFFFF00
+      text_font: font_medium
+      pad_all: 0
+    - id: style_unit_label_w
+      text_color: 0xFF0000
+      text_font: font_medium
+      pad_all: 0
 
     - id: style_peak_label
       text_color: 0xAAAAAA # Dimmer white for headers
@@ -245,27 +269,50 @@ lvgl:
               - label: { id: ip_label, text: "---", x: 28, y: 3, styles: style_bottom_label }
 
         # LEFT PANEL - MIDDLE (V, A, P)
+        - obj: # Voltage Unit Box
+            x: 0
+            y: 20
+            width: 20
+            height: 29
+            styles: style_unit_box
+            widgets:
+              - label: { text: "V", align: CENTER, styles: style_unit_label_v }
         - label:
             id: voltage_value
             styles: style_voltage
-            align: TOP_LEFT
-            x: 2
-            y: 18 # Adjusted Y due to top panel
-            text: "00.000V"
+            x: 24
+            y: 19
+            text: "00.000"
+        
+        - obj: # Current Unit Box
+            x: 0
+            y: 49
+            width: 20
+            height: 30
+            styles: style_unit_box
+            widgets:
+              - label: { text: "A", align: CENTER, styles: style_unit_label_a }
         - label:
             id: current_value
             styles: style_current
-            align: TOP_LEFT
-            x: 2
-            y: 45
-            text: "00.000A"
+            x: 24
+            y: 48
+            text: "00.000"
+
+        - obj: # Power Unit Box
+            x: 0
+            y: 79
+            width: 20
+            height: 29
+            styles: style_unit_box
+            widgets:
+              - label: { text: "W", align: CENTER, styles: style_unit_label_w }
         - label:
             id: power_value
             styles: style_power
-            align: TOP_LEFT
-            x: 2
-            y: 72
-            text: "000.000W"
+            x: 24
+            y: 78
+            text: "000.000"
 
         # LEFT PANEL - BOTTOM (Energy & Charge)
         - obj:
@@ -347,21 +394,21 @@ interval:
           text: !lambda |-
             float v = id(bus_voltage).state;
             char buf[16];
-            sprintf(buf, (v < 10.0f) ? "%.3fV" : "%.2fV", v);
+            sprintf(buf, (v < 10.0f) ? "%.3f" : "%.2f", v);
             return buf;
       - lvgl.label.update:
           id: current_value
           text: !lambda |-
             float v = id(current).state;
             char buf[16];
-            sprintf(buf, (v < 10.0f) ? "%.3fA" : "%.2fA", v);
+            sprintf(buf, (v < 10.0f) ? "%.3f" : "%.2f", v);
             return buf;
       - lvgl.label.update:
           id: power_value
           text: !lambda |-
             float v = id(power).state;
             char buf[16];
-            sprintf(buf, (v < 10.0f) ? "%.3fW" : "%.2fW", v);
+            sprintf(buf, (v < 10.0f) ? "%.3f" : "%.2f", v);
             return buf;
       - lvgl.label.update:
           id: peak_v_label
