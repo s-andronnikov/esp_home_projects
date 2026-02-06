@@ -5,28 +5,40 @@ substitutions:
 esphome:
   name: ${devicename}
   friendly_name: ${friendly}
+  includes:
+    - esp_pm_wrapper.h
   on_boot:
-    priority: 600  # Run early, before WiFi connection (which is priority 250)
-    then:
-      # Restore brightness from flash and apply it immediately
-      - light.turn_on:
-          id: led
-          brightness: !lambda 'return id(brightness_percent) / 100.0;'
-      # Perform initial time sync, then disable Wi‑Fi to save power
-      - script.execute: sync_time
+    - priority: 600  # Run early, before WiFi connection (which is priority 250)
+      then:
+        # Restore brightness from flash and apply it immediately
+        - light.turn_on:
+            id: led
+            brightness: !lambda 'return id(brightness_percent) / 100.0;'
+        # Perform initial time sync, then disable Wi‑Fi to save power
+        - script.execute: sync_time
+    - priority: -10
+      then:
+        - lambda: |-
+            esp_pm_config_t pm_config = {
+                .max_freq_mhz = 240,
+                .min_freq_mhz = 40,
+                .light_sleep_enable = true
+            };
+            esp_pm_configure(&pm_config);
 
 esp32:
   variant: esp32s3
   framework:
     type: esp-idf
+    sdkconfig_options:
+      CONFIG_PM_ENABLE: y
   flash_size: 16MB
 
 # Enable logging
 logger:
-  level: WARN
-  logs:
-    sensor: WARN
-    ledc.output: WARN
+  level: NONE
+  # Disable logging to USB CDC to allow power savings
+  baud_rate: 0
 
 
 
@@ -102,6 +114,11 @@ binary_sensor:
       number: GPIO0
       inverted: true
     internal: true
+    on_click:
+      min_length: 2s
+      max_length: 5s
+      then:
+        - script.execute: sync_time
   - platform: gpio
     id: button_2
     pin:
