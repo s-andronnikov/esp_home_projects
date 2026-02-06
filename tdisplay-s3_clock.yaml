@@ -67,8 +67,8 @@ time:
       - 1.ua.pool.ntp.org
       - 2.ua.pool.ntp.org
     on_time:
-      # Update the clock label every 10 seconds
-      - seconds: /10
+      # Update the clock label every 15 seconds
+      - seconds: /15
         then:
           - lvgl.label.update:
               id: full_screen_time_label
@@ -218,6 +218,7 @@ display:
   - platform: mipi_spi
     model: t-display-s3
     rotation: 270
+    update_interval: never
 
 font:
   - file: "fonts/BebasNeue-Regular.ttf" # Ensure this file is in your esphome directory
@@ -229,6 +230,9 @@ font:
     size: 18 # Smaller font for percent label in the overlay (reduced)
 
 lvgl:
+  # Reduce update frequency for battery saving.
+  # Since we only update the clock every 15s, we can slow down the LVGL task.
+  update_interval: 1s
   widgets:
     - label:
         id: full_screen_time_label
