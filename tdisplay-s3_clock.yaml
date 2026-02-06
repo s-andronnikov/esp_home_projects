@@ -14,6 +14,16 @@ esphome:
         - light.turn_on:
             id: led
             brightness: !lambda 'return id(brightness_percent) / 100.0;'
+        # Update battery status immediately on boot
+        - component.update: battery_voltage
+        - delay: 100ms
+        - lvgl.label.update:
+            id: battery_label
+            text: !lambda |-
+              if (isnan(id(battery_pct).state)) return std::string("--%");
+              char buf[8];
+              sprintf(buf, "%d%%", (int)id(battery_pct).state);
+              return std::string(buf);
         # Perform initial time sync, then disable Wi‑Fi to save power
         - script.execute: sync_time
     - priority: -10
@@ -78,6 +88,13 @@ time:
                   return ctime.strftime("%H:%M");
                 }
                 return std::string("--:--");
+          - lvgl.label.update:
+              id: battery_label
+              text: !lambda |-
+                if (isnan(id(battery_pct).state)) return std::string("--%");
+                char buf[8];
+                sprintf(buf, "%d%%", (int)id(battery_pct).state);
+                return std::string(buf);
       # Daily resync and quick Wi‑Fi on/off at 03:00
       - hours: 3
         minutes: 0
@@ -106,6 +123,39 @@ script:
           timeout: 30s
       - delay: 1s
       - wifi.disable:
+
+sensor:
+  - platform: adc
+    pin: 4
+    id: battery_voltage
+    name: "Battery Voltage"
+    update_interval: 60s
+    attenuation: 11dB
+    filters:
+      - multiply: 2.0  # Voltage divider correction
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    entity_category: diagnostic
+    accuracy_decimals: 2
+    internal: true
+
+  - platform: template
+    name: "Battery Percentage"
+    id: battery_pct
+    unit_of_measurement: "%"
+    device_class: battery
+    accuracy_decimals: 0
+    lambda: |-
+      float volt = id(battery_voltage).state;
+      if (volt >= 4.2) return 100.0;
+      if (volt <= 3.3) return 0.0;
+      return (volt - 3.3) * (100.0 / (4.2 - 3.3));
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: battery_label
+            text: !lambda 'char buf[8]; sprintf(buf, "%d%%", (int)x); return std::string(buf);'
 
 binary_sensor:
   - platform: gpio
@@ -252,6 +302,15 @@ lvgl:
         align: CENTER
         text_align: center 
         # Add LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_CLICKABLE if needed, but not for just displaying time
+
+    - label:
+        id: battery_label
+        text: "--%"
+        text_font: time_font_small
+        text_color: 0x808080 # Grey
+        align: BOTTOM_RIGHT
+        x: -5
+        y: -2
 
     - obj:
         id: brightness_overlay
