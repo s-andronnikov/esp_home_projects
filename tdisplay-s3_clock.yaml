@@ -1,0 +1,248 @@
+substitutions:
+  devicename: esp32-tdisplay
+  friendly: esp32_tdisplay
+
+esphome:
+  name: ${devicename}
+  friendly_name: ${friendly}
+  on_boot:
+    priority: 600  # Run early, before WiFi connection (which is priority 250)
+    then:
+      # Restore brightness from flash and apply it immediately
+      - light.turn_on:
+          id: led
+          brightness: !lambda 'return id(brightness_percent) / 100.0;'
+
+esp32:
+  variant: esp32s3
+  framework:
+    type: esp-idf
+  flash_size: 16MB
+
+# Enable logging
+logger:
+  level: WARN
+  logs:
+    sensor: WARN
+    ledc.output: WARN
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: 15min
+
+
+ota:
+  - platform: esphome
+    password: !secret esphome_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  reboot_timeout: 15min
+  power_save_mode: LIGHT
+
+captive_portal:
+
+globals:
+  - id: brightness_percent
+    type: int
+    restore_value: true
+    initial_value: '60'  # 10..100 (10% steps)
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Kyiv
+    update_interval: 30min
+    on_time:
+      - minutes: '*'
+        seconds: 0
+        then:
+          - lvgl.label.update:
+              id: full_screen_time_label
+              # The 24-hour format is %H:%M
+              text: !lambda |-
+                auto ctime = id(homeassistant_time).now();
+                if (ctime.is_valid()) {
+                  return ctime.strftime("%H:%M");
+                }
+                return std::string("--:--");
+    
+
+script:
+  - id: brightness_hide
+    mode: restart
+    then:
+      - delay: 5s
+      - lvgl.widget.hide:
+          id: brightness_overlay
+
+binary_sensor:
+  - platform: gpio
+    id: button_1
+    pin:
+      number: GPIO0
+      inverted: true
+    internal: true
+  - platform: gpio
+    id: button_2
+    pin:
+      number: GPIO14
+      inverted: true
+    internal: true
+    on_press:
+      then:
+        - lambda: |-
+            // increment by 10% (10..100) and wrap around
+            int percent = id(brightness_percent) + 10;
+            if (percent > 100) percent = 10;
+            id(brightness_percent) = percent;
+            // Update the number entity to sync with HA
+            id(brightness_percent_number).publish_state(percent);
+        - light.turn_on:
+            id: led
+            brightness: !lambda 'return id(brightness_percent) / 100.0;'
+        - lvgl.bar.update:
+            id: brightness_bar
+            value: !lambda 'return id(brightness_percent);'
+        - lvgl.label.update:
+            id: brightness_percent_label
+            text: !lambda 'char buf[32]; sprintf(buf, "Brightness: %d%%", id(brightness_percent)); return std::string(buf);'
+        - lvgl.widget.show:
+            id: brightness_overlay
+        - script.execute: brightness_hide
+
+output:
+  - platform: ledc
+    frequency: 2000
+    pin: GPIO38
+    id: backlight_output
+
+light:
+  - platform: monochromatic
+    output: backlight_output
+    name: LCD Backlight
+    id: led
+    restore_mode: ALWAYS_ON
+    default_transition_length: 0s
+    internal: true
+
+# Expose brightness as percentage (10..100) to Home Assistant as a number entity.
+# Changing this from Home Assistant will update the stored percent, set the light brightness,
+# show the progress bar and start the auto-hide timer.
+number:
+  - platform: template
+    id: brightness_percent_number
+    name: "Screen Brightness"
+    icon: mdi:brightness-6
+    mode: slider
+    min_value: 10
+    max_value: 100
+    step: 10
+    unit_of_measurement: '%'
+    optimistic: true
+    restore_value: true
+    set_action:
+      - globals.set:
+          id: brightness_percent
+          value: !lambda 'return (int)x;'
+      - light.turn_on:
+          id: led
+          brightness: !lambda 'return x / 100.0;'
+      - lvgl.bar.update:
+          id: brightness_bar
+          value: !lambda 'return (int)x;'
+      - lvgl.label.update:
+          id: brightness_percent_label
+          text: !lambda 'char buf[32]; sprintf(buf, "Brightness: %d%%", (int)x); return std::string(buf);'
+      - lvgl.widget.show:
+          id: brightness_overlay
+      - script.execute: brightness_hide
+
+
+spi:
+  type: octal
+  clk_pin: 8
+  data_pins:
+    - 39
+    - 40
+    - 41
+    - 42
+    - ignore_strapping_warning: true
+      number: 45
+    - ignore_strapping_warning: true
+      number: 46
+    - 47
+    - 48
+
+psram:
+  speed: 80MHz
+  mode: octal
+
+display:
+  - platform: mipi_spi
+    model: t-display-s3
+    rotation: 270
+
+font:
+  - file: "fonts/BebasNeue-Regular.ttf" # Ensure this file is in your esphome directory
+    id: time_font
+    size: 160 # Increased so the clock renders full-screen; adjust if needed
+
+  - file: "fonts/BebasNeue-Regular.ttf"
+    id: time_font_small
+    size: 18 # Smaller font for percent label in the overlay (reduced)
+
+lvgl:
+  widgets:
+    - label:
+        id: full_screen_time_label
+        # Fill the entire display so the font can scale to the full area
+        width: "100%"
+        height: "100%"
+        # Position at top left (still 0,0) and allow centering by align/text_align
+        x: 0
+        y: 0
+        text: "--:--" # Start blank; time will be updated by on_time trigger
+        text_font: time_font
+        # White time text on a black background so the screen appears blank except for the time
+        text_color: 0xFFFFFF
+        bg_color: 0x000000
+        bg_opa: 100%
+        # Center the text within the label widget area (horizontal + vertical)
+        align: CENTER
+        text_align: center 
+        # Add LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_CLICKABLE if needed, but not for just displaying time
+
+    - obj:
+        id: brightness_overlay
+        # Full-screen overlay background with 50% opacity
+        width: "100%"
+        height: "100%"
+        x: 0
+        y: 0
+        bg_color: 0x000000
+        bg_opa: 50%
+        hidden: true
+        widgets:
+          - bar:
+              id: brightness_bar
+              # bar centered horizontally, width 70%
+              width: "70%"
+              height: 20
+              align: CENTER
+              y: "24%"
+              value: 0
+          - label:
+              id: brightness_percent_label
+              # percent label located under the bar, left-aligned inside the same centered area
+              width: "70%"
+              align: CENTER
+              y: "46%"
+              text: ""  # updated dynamically when brightness changes
+              text_font: time_font_small
+              text_color: 0xFFFFFF
+              text_align: left
