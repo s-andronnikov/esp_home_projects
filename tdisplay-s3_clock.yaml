@@ -12,6 +12,8 @@ esphome:
       - light.turn_on:
           id: led
           brightness: !lambda 'return id(brightness_percent) / 100.0;'
+      # Perform initial time sync, then disable Wi‑Fi to save power
+      - script.execute: sync_time
 
 esp32:
   variant: esp32s3
@@ -26,25 +28,17 @@ logger:
     sensor: WARN
     ledc.output: WARN
 
-# Enable Home Assistant API
-api:
-  encryption:
-    key: !secret api_encryption_key
-  reboot_timeout: 15min
 
 
-ota:
-  - platform: esphome
-    password: !secret esphome_ota_password
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   fast_connect: true
   reboot_timeout: 15min
-  power_save_mode: LIGHT
+  power_save_mode: HIGH
+  output_power: 8.5dBm
 
-captive_portal:
 
 globals:
   - id: brightness_percent
@@ -53,23 +47,31 @@ globals:
     initial_value: '60'  # 10..100 (10% steps)
 
 time:
-  - platform: homeassistant
-    id: homeassistant_time
+  - platform: sntp
+    id: sntp_time
     timezone: Europe/Kyiv
-    update_interval: 30min
+    servers:
+      - 0.ua.pool.ntp.org
+      - 1.ua.pool.ntp.org
+      - 2.ua.pool.ntp.org
     on_time:
-      - minutes: '*'
-        seconds: 0
+      # Update the clock label every 10 seconds
+      - seconds: /10
         then:
           - lvgl.label.update:
               id: full_screen_time_label
-              # The 24-hour format is %H:%M
               text: !lambda |-
-                auto ctime = id(homeassistant_time).now();
+                auto ctime = id(sntp_time).now();
                 if (ctime.is_valid()) {
                   return ctime.strftime("%H:%M");
                 }
                 return std::string("--:--");
+      # Daily resync and quick Wi‑Fi on/off at 03:00
+      - hours: 3
+        minutes: 0
+        seconds: 0
+        then:
+          - script.execute: sync_time
     
 
 script:
@@ -79,6 +81,19 @@ script:
       - delay: 5s
       - lvgl.widget.hide:
           id: brightness_overlay
+  - id: sync_time
+    mode: queued
+    then:
+      - wifi.enable:
+      - delay: 2s
+      - wait_until:
+          condition:
+            lambda: |-
+              // Wait until time becomes valid (SNTP synced) or timeout
+              return id(sntp_time).now().is_valid();
+          timeout: 30s
+      - delay: 1s
+      - wifi.disable:
 
 binary_sensor:
   - platform: gpio
